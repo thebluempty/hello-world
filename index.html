@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>감정 기록 앱</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+                'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+                sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        #root {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .app-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .app-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .app-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .app-header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .tab-navigation {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 20px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #6c757d;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab-button:hover {
+            background: #e9ecef;
+        }
+
+        .tab-button.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            background: white;
+        }
+
+        .tab-content {
+            padding: 30px;
+            min-height: 500px;
+        }
+
+        /* 감정 기록 폼 */
+        .emotion-form {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .form-section {
+            margin-bottom: 30px;
+        }
+
+        .form-section h3 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 1.3rem;
+        }
+
+        .emotion-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .emotion-chip {
+            padding: 12px 20px;
+            border: 2px solid #dee2e6;
+            border-radius: 25px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .emotion-chip:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .emotion-chip.selected {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .add-custom-button {
+            padding: 12px 20px;
+            border: 2px dashed #667eea;
+            border-radius: 25px;
+            background: white;
+            color: #667eea;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .add-custom-button:hover {
+            background: #f8f9fa;
+        }
+
+        .intensity-slider {
+            margin-top: 10px;
+        }
+
+        .intensity-slider label {
+            display: block;
+            margin-bottom: 5px;
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        .intensity-slider input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #e9ecef;
+            outline: none;
+        }
+
+        .intensity-slider input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+        }
+
+        .intensity-value {
+            text-align: center;
+            margin-top: 5px;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .body-map-container {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+        }
+
+        .body-diagram {
+            position: relative;
+            width: 200px;
+            height: 400px;
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            cursor: crosshair;
+        }
+
+        .body-point {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: #667eea;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .body-point:hover {
+            transform: translate(-50%, -50%) scale(1.5);
+        }
+
+        .sensation-list {
+            flex: 1;
+        }
+
+        .sensation-item {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #6c757d;
+            font-weight: 500;
+        }
+
+        .input-group input,
+        .input-group select,
+        .input-group textarea {
+            width: 100%;
+            padding: 10px 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .input-group input:focus,
+        .input-group select:focus,
+        .input-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .save-button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .save-button:hover {
+            transform: translateY(-2px);
+        }
+
+        .save-button:active {
+            transform: translateY(0);
+        }
+
+        /* 기록 목록 */
+        .records-list {
+            display: grid;
+            gap: 20px;
+        }
+
+        .record-card {
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            border-left: 5px solid #667eea;
+            transition: all 0.3s;
+        }
+
+        .record-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .record-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .record-time {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .record-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-button {
+            padding: 5px 10px;
+            border: none;
+            background: white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .action-button:hover {
+            background: #dee2e6;
+        }
+
+        .record-emotions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .emotion-tag {
+            padding: 5px 12px;
+            background: white;
+            border-radius: 15px;
+            font-size: 0.9rem;
+        }
+
+        /* 시각화 */
+        .visualization-container {
+            width: 100%;
+            height: 600px;
+        }
+
+        .scale-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .scale-button {
+            padding: 10px 20px;
+            border: 2px solid #dee2e6;
+            background: white;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .scale-button:hover {
+            border-color: #667eea;
+        }
+
+        .scale-button.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        #sine-wave-chart {
+            width: 100%;
+            height: 500px;
+        }
+
+        .tooltip {
+            position: absolute;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            border-radius: 5px;
+            pointer-events: none;
+            font-size: 0.9rem;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // 데이터 스토리지
+        const Storage = {
+            save(records) {
+                localStorage.setItem('emotionRecords', JSON.stringify(records));
+            },
+            load() {
+                const data = localStorage.getItem('emotionRecords');
+                return data ? JSON.parse(data) : [];
+            }
+        };
+
+        // 미리 정의된 감정
+        const predefinedEmotions = [
+            '기쁨', '슬픔', '분노', '불안', '평온', '혼란', '외로움', '설렘',
+            '짜증', '만족', '두려움', '희망'
+        ];
+
+        // 감정 색상 매핑
+        const emotionColors = {
+            '기쁨': '#FFD700',
+            '슬픔': '#4169E1',
+            '분노': '#DC143C',
+            '불안': '#FFA500',
+            '평온': '#87CEEB',
+            '혼란': '#9370DB',
+            '외로움': '#696969',
+            '설렘': '#FF69B4',
+            '짜증': '#FF6347',
+            '만족': '#90EE90',
+            '두려움': '#8B008B',
+            '희망': '#FFB6C1'
+        };
+
+        // 신체 부위
+        const bodyAreas = [
+            '머리', '이마', '눈', '코', '입', '턱', '목', '어깨', '가슴', '배', '등', '팔', '손', '다리', '발'
+        ];
+
+        // 감각 타입
+        const sensationTypes = [
+            '압박', '열감', '통증', '떨림', '무거움', '텅빔', '뻐근함', '시원함', '저림', '가려움'
+        ];
+
+        // 장소 카테고리
+        const locationCategories = [
+            '집', '직장', '카페', '식당', '야외', '교통', '학교', '병원', '기타'
+        ];
+
+        // 감정 기록 폼 컴포넌트
+        function EmotionRecordForm({ onSave }) {
+            const [selectedEmotions, setSelectedEmotions] = useState([]);
+            const [customEmotions, setCustomEmotions] = useState([]);
+            const [emotionIntensities, setEmotionIntensities] = useState({});
+            const [bodySensations, setBodySensations] = useState([]);
+            const [timestamp, setTimestamp] = useState(new Date().toISOString().slice(0, 16));
+            const [locationType, setLocationType] = useState('category');
+            const [locationValue, setLocationValue] = useState('집');
+            const [customCategories, setCustomCategories] = useState({});
+
+            const allEmotions = [...predefinedEmotions, ...customEmotions];
+
+            const toggleEmotion = (emotion) => {
+                if (selectedEmotions.includes(emotion)) {
+                    setSelectedEmotions(selectedEmotions.filter(e => e !== emotion));
+                    const newIntensities = { ...emotionIntensities };
+                    delete newIntensities[emotion];
+                    setEmotionIntensities(newIntensities);
+                } else {
+                    setSelectedEmotions([...selectedEmotions, emotion]);
+                    setEmotionIntensities({ ...emotionIntensities, [emotion]: 5 });
+                }
+            };
+
+            const addCustomEmotion = () => {
+                const emotion = prompt('새로운 감정을 입력하세요:');
+                if (emotion && !allEmotions.includes(emotion)) {
+                    setCustomEmotions([...customEmotions, emotion]);
+                }
+            };
+
+            const handleBodyClick = (e) => {
+                const rect = e.target.getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width * 100).toFixed(1);
+                const y = ((e.clientY - rect.top) / rect.height * 100).toFixed(1);
+
+                const area = prompt('신체 부위를 선택하세요:\n' + bodyAreas.join(', '));
+                if (!area) return;
+
+                const type = prompt('감각 타입을 선택하세요:\n' + sensationTypes.join(', '));
+                if (!type) return;
+
+                const description = prompt('구체적인 설명을 입력하세요:');
+
+                setBodySensations([...bodySensations, {
+                    x,
+                    y,
+                    area,
+                    specificLocation: area,
+                    sensationType: type,
+                    description: description || ''
+                }]);
+            };
+
+            const removeSensation = (index) => {
+                setBodySensations(bodySensations.filter((_, i) => i !== index));
+            };
+
+            const handleSave = () => {
+                const record = {
+                    id: Date.now().toString(),
+                    timestamp: new Date(timestamp).toISOString(),
+                    location: {
+                        type: locationType,
+                        value: locationValue
+                    },
+                    emotions: selectedEmotions.map(name => ({
+                        name,
+                        intensity: emotionIntensities[name]
+                    })),
+                    bodySensations,
+                    customCategories
+                };
+
+                onSave(record);
+
+                // 초기화
+                setSelectedEmotions([]);
+                setEmotionIntensities({});
+                setBodySensations([]);
+                setTimestamp(new Date().toISOString().slice(0, 16));
+                setLocationValue('집');
+                setCustomCategories({});
+            };
+
+            return (
+                <div className="emotion-form">
+                    <div className="form-section">
+                        <h3>감정 선택</h3>
+                        <div className="emotion-grid">
+                            {allEmotions.map(emotion => (
+                                <div
+                                    key={emotion}
+                                    className={`emotion-chip ${selectedEmotions.includes(emotion) ? 'selected' : ''}`}
+                                    onClick={() => toggleEmotion(emotion)}
+                                >
+                                    {emotion}
+                                </div>
+                            ))}
+                            <button className="add-custom-button" onClick={addCustomEmotion}>
+                                + 감정 추가
+                            </button>
+                        </div>
+
+                        {selectedEmotions.map(emotion => (
+                            <div key={emotion} className="intensity-slider">
+                                <label>{emotion} 강도</label>
+                                <input
+                                    type="range"
+                                    min="1"
+                                    max="10"
+                                    value={emotionIntensities[emotion] || 5}
+                                    onChange={(e) => setEmotionIntensities({
+                                        ...emotionIntensities,
+                                        [emotion]: parseInt(e.target.value)
+                                    })}
+                                />
+                                <div className="intensity-value">{emotionIntensities[emotion] || 5} / 10</div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="form-section">
+                        <h3>신체 감각</h3>
+                        <div className="body-map-container">
+                            <div className="body-diagram" onClick={handleBodyClick}>
+                                <div style={{ textAlign: 'center', paddingTop: '10px', color: '#6c757d' }}>
+                                    전면<br/>클릭하여 감각 추가
+                                </div>
+                                {bodySensations.map((sensation, index) => (
+                                    <div
+                                        key={index}
+                                        className="body-point"
+                                        style={{ left: `${sensation.x}%`, top: `${sensation.y}%` }}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (confirm('이 감각을 삭제하시겠습니까?')) {
+                                                removeSensation(index);
+                                            }
+                                        }}
+                                        title={`${sensation.area} - ${sensation.sensationType}`}
+                                    />
+                                ))}
+                            </div>
+                            <div className="sensation-list">
+                                <h4>기록된 감각</h4>
+                                {bodySensations.map((sensation, index) => (
+                                    <div key={index} className="sensation-item">
+                                        <strong>{sensation.area}</strong> - {sensation.sensationType}
+                                        {sensation.description && <div>{sensation.description}</div>}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="form-section">
+                        <h3>시간 및 장소</h3>
+                        <div className="input-group">
+                            <label>시간</label>
+                            <input
+                                type="datetime-local"
+                                value={timestamp}
+                                onChange={(e) => setTimestamp(e.target.value)}
+                            />
+                        </div>
+                        <div className="input-group">
+                            <label>장소</label>
+                            <select value={locationValue} onChange={(e) => setLocationValue(e.target.value)}>
+                                {locationCategories.map(cat => (
+                                    <option key={cat} value={cat}>{cat}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+
+                    <button className="save-button" onClick={handleSave}>
+                        저장하기
+                    </button>
+                </div>
+            );
+        }
+
+        // 기록 목록 컴포넌트
+        function RecordsList({ records, onDelete }) {
+            if (records.length === 0) {
+                return <div style={{ textAlign: 'center', color: '#6c757d', padding: '50px' }}>
+                    아직 기록이 없습니다. 감정을 기록해보세요!
+                </div>;
+            }
+
+            return (
+                <div className="records-list">
+                    {records.map(record => (
+                        <div key={record.id} className="record-card">
+                            <div className="record-header">
+                                <div className="record-time">
+                                    {new Date(record.timestamp).toLocaleString('ko-KR')}
+                                </div>
+                                <div className="record-actions">
+                                    <button className="action-button" onClick={() => onDelete(record.id)}>
+                                        삭제
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="record-emotions">
+                                {record.emotions.map((emotion, i) => (
+                                    <span
+                                        key={i}
+                                        className="emotion-tag"
+                                        style={{ background: emotionColors[emotion.name] || '#e9ecef' }}
+                                    >
+                                        {emotion.name} ({emotion.intensity})
+                                    </span>
+                                ))}
+                            </div>
+                            <div style={{ marginTop: '10px', color: '#6c757d' }}>
+                                📍 {record.location.value}
+                            </div>
+                            {record.bodySensations.length > 0 && (
+                                <div style={{ marginTop: '10px', color: '#6c757d' }}>
+                                    🫀 {record.bodySensations.map(s => s.area).join(', ')}
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            );
+        }
+
+        // 사인파 시각화 컴포넌트
+        function SineWaveVisualization({ records }) {
+            const svgRef = useRef();
+            const [timeScale, setTimeScale] = useState('day'); // day, week, month, year
+
+            useEffect(() => {
+                if (!records.length || !svgRef.current) return;
+
+                const svg = d3.select(svgRef.current);
+                svg.selectAll('*').remove();
+
+                const width = svgRef.current.clientWidth;
+                const height = svgRef.current.clientHeight;
+                const margin = { top: 40, right: 40, bottom: 60, left: 60 };
+                const innerWidth = width - margin.left - margin.right;
+                const innerHeight = height - margin.top - margin.bottom;
+
+                const g = svg.append('g')
+                    .attr('transform', `translate(${margin.left},${margin.top})`);
+
+                // 시간 범위 계산
+                const now = new Date();
+                let startTime, endTime, cycleMs;
+
+                switch(timeScale) {
+                    case 'day':
+                        startTime = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                        endTime = new Date(startTime.getTime() + 24 * 60 * 60 * 1000);
+                        cycleMs = 24 * 60 * 60 * 1000;
+                        break;
+                    case 'week':
+                        const dayOfWeek = now.getDay();
+                        startTime = new Date(now.getTime() - dayOfWeek * 24 * 60 * 60 * 1000);
+                        startTime.setHours(0, 0, 0, 0);
+                        endTime = new Date(startTime.getTime() + 7 * 24 * 60 * 60 * 1000);
+                        cycleMs = 7 * 24 * 60 * 60 * 1000;
+                        break;
+                    case 'month':
+                        startTime = new Date(now.getFullYear(), now.getMonth(), 1);
+                        endTime = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                        cycleMs = endTime.getTime() - startTime.getTime();
+                        break;
+                    case 'year':
+                        startTime = new Date(now.getFullYear(), 0, 1);
+                        endTime = new Date(now.getFullYear(), 11, 31);
+                        cycleMs = endTime.getTime() - startTime.getTime();
+                        break;
+                }
+
+                // X축: 시간 (0 to 2π)
+                const xScale = d3.scaleLinear()
+                    .domain([0, cycleMs])
+                    .range([0, innerWidth]);
+
+                // Y축: 사인파 값
+                const yScale = d3.scaleLinear()
+                    .domain([-1.5, 1.5])
+                    .range([innerHeight, 0]);
+
+                // 사인파 경로 생성
+                const sineData = d3.range(0, cycleMs, cycleMs / 200).map(t => ({
+                    time: t,
+                    value: Math.sin((t / cycleMs) * 2 * Math.PI)
+                }));
+
+                const line = d3.line()
+                    .x(d => xScale(d.time))
+                    .y(d => yScale(d.value))
+                    .curve(d3.curveNatural);
+
+                // 사인파 그리기
+                g.append('path')
+                    .datum(sineData)
+                    .attr('d', line)
+                    .attr('fill', 'none')
+                    .attr('stroke', '#dee2e6')
+                    .attr('stroke-width', 2);
+
+                // 감정 마커 추가
+                const filteredRecords = records.filter(r => {
+                    const recordTime = new Date(r.timestamp);
+                    return recordTime >= startTime && recordTime < endTime;
+                });
+
+                const tooltip = d3.select('body').append('div')
+                    .attr('class', 'tooltip')
+                    .style('position', 'absolute')
+                    .style('opacity', 0);
+
+                filteredRecords.forEach(record => {
+                    const recordTime = new Date(record.timestamp);
+                    const timeOffset = recordTime.getTime() - startTime.getTime();
+                    const sineValue = Math.sin((timeOffset / cycleMs) * 2 * Math.PI);
+
+                    record.emotions.forEach(emotion => {
+                        const color = emotionColors[emotion.name] || '#667eea';
+                        const radius = 3 + emotion.intensity;
+
+                        g.append('circle')
+                            .attr('cx', xScale(timeOffset))
+                            .attr('cy', yScale(sineValue))
+                            .attr('r', radius)
+                            .attr('fill', color)
+                            .attr('stroke', 'white')
+                            .attr('stroke-width', 2)
+                            .style('cursor', 'pointer')
+                            .on('mouseover', function(event) {
+                                d3.select(this).transition().duration(200).attr('r', radius * 1.5);
+                                tooltip.transition().duration(200).style('opacity', 1);
+                                tooltip.html(`
+                                    <strong>${emotion.name}</strong><br/>
+                                    강도: ${emotion.intensity}<br/>
+                                    시간: ${recordTime.toLocaleString('ko-KR')}<br/>
+                                    장소: ${record.location.value}
+                                `)
+                                    .style('left', (event.pageX + 10) + 'px')
+                                    .style('top', (event.pageY - 28) + 'px');
+                            })
+                            .on('mouseout', function() {
+                                d3.select(this).transition().duration(200).attr('r', radius);
+                                tooltip.transition().duration(200).style('opacity', 0);
+                            });
+
+                        // 감정 라벨
+                        g.append('text')
+                            .attr('x', xScale(timeOffset))
+                            .attr('y', yScale(sineValue) - radius - 5)
+                            .attr('text-anchor', 'middle')
+                            .attr('font-size', '10px')
+                            .attr('fill', '#333')
+                            .text(emotion.name);
+                    });
+                });
+
+                // X축
+                const xAxis = d3.axisBottom(xScale)
+                    .ticks(10)
+                    .tickFormat(d => {
+                        const t = new Date(startTime.getTime() + d);
+                        switch(timeScale) {
+                            case 'day':
+                                return t.getHours() + '시';
+                            case 'week':
+                                return ['일', '월', '화', '수', '목', '금', '토'][t.getDay()];
+                            case 'month':
+                                return t.getDate() + '일';
+                            case 'year':
+                                return (t.getMonth() + 1) + '월';
+                        }
+                    });
+
+                g.append('g')
+                    .attr('transform', `translate(0,${innerHeight})`)
+                    .call(xAxis);
+
+                // Y축
+                g.append('g')
+                    .call(d3.axisLeft(yScale));
+
+                // 제목
+                svg.append('text')
+                    .attr('x', width / 2)
+                    .attr('y', 20)
+                    .attr('text-anchor', 'middle')
+                    .attr('font-size', '16px')
+                    .attr('font-weight', 'bold')
+                    .text(`감정의 시간 흐름 (${
+                        timeScale === 'day' ? '하루' :
+                        timeScale === 'week' ? '일주일' :
+                        timeScale === 'month' ? '한 달' : '일 년'
+                    })`);
+
+            }, [records, timeScale]);
+
+            return (
+                <div>
+                    <div className="scale-buttons">
+                        <button
+                            className={`scale-button ${timeScale === 'day' ? 'active' : ''}`}
+                            onClick={() => setTimeScale('day')}
+                        >
+                            하루
+                        </button>
+                        <button
+                            className={`scale-button ${timeScale === 'week' ? 'active' : ''}`}
+                            onClick={() => setTimeScale('week')}
+                        >
+                            일주일
+                        </button>
+                        <button
+                            className={`scale-button ${timeScale === 'month' ? 'active' : ''}`}
+                            onClick={() => setTimeScale('month')}
+                        >
+                            한 달
+                        </button>
+                        <button
+                            className={`scale-button ${timeScale === 'year' ? 'active' : ''}`}
+                            onClick={() => setTimeScale('year')}
+                        >
+                            일 년
+                        </button>
+                    </div>
+                    <svg ref={svgRef} id="sine-wave-chart" className="visualization-container"></svg>
+                </div>
+            );
+        }
+
+        // 메인 앱 컴포넌트
+        function App() {
+            const [activeTab, setActiveTab] = useState('record');
+            const [records, setRecords] = useState([]);
+
+            useEffect(() => {
+                setRecords(Storage.load());
+            }, []);
+
+            const handleSaveRecord = (record) => {
+                const newRecords = [...records, record];
+                setRecords(newRecords);
+                Storage.save(newRecords);
+                setActiveTab('list');
+            };
+
+            const handleDeleteRecord = (id) => {
+                if (confirm('이 기록을 삭제하시겠습니까?')) {
+                    const newRecords = records.filter(r => r.id !== id);
+                    setRecords(newRecords);
+                    Storage.save(newRecords);
+                }
+            };
+
+            return (
+                <div className="app-container">
+                    <div className="app-header">
+                        <h1>감정 기록 앱</h1>
+                        <p>감정을 시간, 장소, 신체와 함께 기록하고 시각화하세요</p>
+                    </div>
+
+                    <div className="tab-navigation">
+                        <button
+                            className={`tab-button ${activeTab === 'record' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('record')}
+                        >
+                            📝 기록하기
+                        </button>
+                        <button
+                            className={`tab-button ${activeTab === 'list' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('list')}
+                        >
+                            📋 기록 목록
+                        </button>
+                        <button
+                            className={`tab-button ${activeTab === 'visualize' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('visualize')}
+                        >
+                            📊 시각화
+                        </button>
+                    </div>
+
+                    <div className="tab-content">
+                        {activeTab === 'record' && <EmotionRecordForm onSave={handleSaveRecord} />}
+                        {activeTab === 'list' && <RecordsList records={records} onDelete={handleDeleteRecord} />}
+                        {activeTab === 'visualize' && <SineWaveVisualization records={records} />}
+                    </div>
+                </div>
+            );
+        }
+
+        // 렌더링
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
