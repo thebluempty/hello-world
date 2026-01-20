@@ -739,35 +739,82 @@
                 bodyParts.rightFoot = rightFoot;
 
                 // 내부 장기들 (투명하게 시작)
-                const internalMaterial = new THREE.MeshPhongMaterial({
-                    color: 0xff6b6b,
+                // 심장 - 붉은색
+                const heartMaterial = new THREE.MeshPhongMaterial({
+                    color: 0xcc4444,
                     transparent: true,
                     opacity: 0
                 });
-
-                // 심장
-                const heartGeometry = new THREE.SphereGeometry(0.12, 16, 16);
-                const heart = new THREE.Mesh(heartGeometry, internalMaterial.clone());
-                heart.position.set(-0.05, 1.7, -0.1);
+                const heartGeometry = new THREE.ConeGeometry(0.12, 0.20, 16);
+                const heart = new THREE.Mesh(heartGeometry, heartMaterial);
+                heart.position.set(-0.08, 1.65, -0.05);
+                heart.rotation.z = Math.PI; // 거꾸로
+                heart.rotation.x = -0.3;
                 heart.userData = { part: '심장', layer: 'internal' };
                 scene.add(heart);
                 bodyParts.heart = heart;
 
-                // 위
-                const stomachGeometry = new THREE.SphereGeometry(0.15, 16, 16);
-                const stomach = new THREE.Mesh(stomachGeometry, internalMaterial.clone());
-                stomach.position.set(0, 1.1, -0.05);
+                // 폐 (왼쪽)
+                const lungMaterial = new THREE.MeshPhongMaterial({
+                    color: 0xff9999,
+                    transparent: true,
+                    opacity: 0
+                });
+                const leftLungGeometry = new THREE.BoxGeometry(0.15, 0.35, 0.15);
+                const leftLung = new THREE.Mesh(leftLungGeometry, lungMaterial.clone());
+                leftLung.position.set(-0.18, 1.6, -0.08);
+                leftLung.userData = { part: '폐', layer: 'internal' };
+                scene.add(leftLung);
+                bodyParts.leftLung = leftLung;
+
+                // 폐 (오른쪽)
+                const rightLung = new THREE.Mesh(leftLungGeometry, lungMaterial.clone());
+                rightLung.position.set(0.18, 1.6, -0.08);
+                rightLung.userData = { part: '폐', layer: 'internal' };
+                scene.add(rightLung);
+                bodyParts.rightLung = rightLung;
+
+                // 간 - 갈색
+                const liverMaterial = new THREE.MeshPhongMaterial({
+                    color: 0x8b4513,
+                    transparent: true,
+                    opacity: 0
+                });
+                const liverGeometry = new THREE.BoxGeometry(0.28, 0.12, 0.18);
+                const liver = new THREE.Mesh(liverGeometry, liverMaterial);
+                liver.position.set(0.08, 1.35, -0.05);
+                liver.rotation.z = -0.15;
+                liver.userData = { part: '간', layer: 'internal' };
+                scene.add(liver);
+                bodyParts.liver = liver;
+
+                // 위 - 분홍색
+                const stomachMaterial = new THREE.MeshPhongMaterial({
+                    color: 0xffb3ba,
+                    transparent: true,
+                    opacity: 0
+                });
+                const stomachGeometry = new THREE.CylinderGeometry(0.10, 0.08, 0.25, 16);
+                const stomach = new THREE.Mesh(stomachGeometry, stomachMaterial);
+                stomach.position.set(-0.05, 1.15, -0.08);
+                stomach.rotation.z = 0.3;
                 stomach.userData = { part: '위', layer: 'internal' };
                 scene.add(stomach);
                 bodyParts.stomach = stomach;
 
-                // 간
-                const liverGeometry = new THREE.BoxGeometry(0.25, 0.15, 0.2);
-                const liver = new THREE.Mesh(liverGeometry, internalMaterial.clone());
-                liver.position.set(0.1, 1.3, -0.05);
-                liver.userData = { part: '간', layer: 'internal' };
-                scene.add(liver);
-                bodyParts.liver = liver;
+                // 장 - 연한 분홍
+                const intestineMaterial = new THREE.MeshPhongMaterial({
+                    color: 0xffd4d4,
+                    transparent: true,
+                    opacity: 0
+                });
+                const intestineGeometry = new THREE.TorusGeometry(0.12, 0.04, 8, 16);
+                const intestine = new THREE.Mesh(intestineGeometry, intestineMaterial);
+                intestine.position.set(0, 0.95, -0.05);
+                intestine.rotation.x = Math.PI / 2;
+                intestine.userData = { part: '장', layer: 'internal' };
+                scene.add(intestine);
+                bodyParts.intestine = intestine;
 
                 bodyPartsRef.current = bodyParts;
 
@@ -809,8 +856,9 @@
                 renderer.domElement.addEventListener('click', onMouseClick);
 
                 // 애니메이션 루프
+                let animationId;
                 const animate = () => {
-                    requestAnimationFrame(animate);
+                    animationId = requestAnimationFrame(animate);
                     controls.update();
                     renderer.render(scene, camera);
                 };
@@ -818,11 +866,47 @@
 
                 // 클린업
                 return () => {
-                    renderer.domElement.removeEventListener('click', onMouseClick);
-                    if (containerRef.current && renderer.domElement.parentNode === containerRef.current) {
-                        containerRef.current.removeChild(renderer.domElement);
+                    // 애니메이션 중단
+                    if (animationId) {
+                        cancelAnimationFrame(animationId);
                     }
+
+                    // 이벤트 리스너 제거
+                    renderer.domElement.removeEventListener('click', onMouseClick);
+
+                    // DOM에서 canvas 제거
+                    if (containerRef.current && renderer.domElement) {
+                        try {
+                            containerRef.current.removeChild(renderer.domElement);
+                        } catch (e) {
+                            console.log('Canvas already removed');
+                        }
+                    }
+
+                    // Three.js 리소스 정리
+                    controls.dispose();
                     renderer.dispose();
+
+                    // 씬의 모든 객체 제거
+                    while(scene.children.length > 0) {
+                        const object = scene.children[0];
+                        if (object.geometry) object.geometry.dispose();
+                        if (object.material) {
+                            if (Array.isArray(object.material)) {
+                                object.material.forEach(mat => mat.dispose());
+                            } else {
+                                object.material.dispose();
+                            }
+                        }
+                        scene.remove(object);
+                    }
+
+                    // ref 초기화
+                    sceneRef.current = null;
+                    cameraRef.current = null;
+                    rendererRef.current = null;
+                    controlsRef.current = null;
+                    bodyPartsRef.current = {};
                 };
             }, [use3D]);
 
@@ -925,16 +1009,96 @@
                             {!use3D ? (
                                 <div className="body-diagram" onClick={handleBodyClick} style={{ position: 'relative' }}>
                                     <svg width="200" height="400" style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none' }}>
-                                        <g fill="#e9ecef" stroke="#adb5bd" strokeWidth="2" strokeLinejoin="round">
-                                            <ellipse cx="100" cy="35" rx="22" ry="28"/>
-                                            <path d="M 88 58 Q 88 70 90 73 L 110 73 Q 112 70 112 58 Z"/>
-                                            <path d="M 90 73 Q 70 85 65 100 L 65 120 Q 65 145 70 155 L 75 175 Q 80 185 100 188 Q 120 185 125 175 L 130 155 Q 135 145 135 120 L 135 100 Q 130 85 110 73 Z"/>
-                                            <path d="M 65 95 Q 55 100 48 115 Q 42 130 40 145 L 38 155 Q 37 158 38 160 L 42 162 Q 44 162 45 160 L 47 145 Q 50 130 56 115 Q 62 102 68 100 Z"/>
-                                            <path d="M 135 95 Q 145 100 152 115 Q 158 130 160 145 L 162 155 Q 163 158 162 160 L 158 162 Q 156 162 155 160 L 153 145 Q 150 130 144 115 Q 138 102 132 100 Z"/>
-                                            <path d="M 78 188 Q 76 210 74 240 Q 72 270 71 300 L 70 325 Q 69 335 72 340 L 78 342 Q 82 342 83 338 L 82 300 Q 83 270 85 240 Q 86 215 88 195 Z"/>
-                                            <path d="M 122 188 Q 124 210 126 240 Q 128 270 129 300 L 130 325 Q 131 335 128 340 L 122 342 Q 118 342 117 338 L 118 300 Q 117 270 115 240 Q 114 215 112 195 Z"/>
+                                        <g fill="#f5e6d3" stroke="#c4a57b" strokeWidth="1.5">
+                                            {/* 머리 - 더 사실적인 형태 */}
+                                            <ellipse cx="100" cy="30" rx="18" ry="23" fill="#f5e6d3"/>
+
+                                            {/* 목 - 자연스러운 곡선 */}
+                                            <path d="M 88 50 Q 89 55 90 58 L 110 58 Q 111 55 112 50" fill="#f5e6d3"/>
+
+                                            {/* 어깨 라인 - 둥근 형태 */}
+                                            <path d="M 90 58 Q 65 60 55 70 Q 55 75 58 78 L 68 80" fill="none" stroke="#c4a57b" strokeWidth="2"/>
+                                            <path d="M 110 58 Q 135 60 145 70 Q 145 75 142 78 L 132 80" fill="none" stroke="#c4a57b" strokeWidth="2"/>
+
+                                            {/* 몸통 - 인체 비율 */}
+                                            <path d="M 90 58
+                                                     C 75 65 68 75 66 85
+                                                     L 66 115
+                                                     C 66 125 68 135 72 145
+                                                     L 76 165
+                                                     C 78 172 85 178 100 180
+                                                     C 115 178 122 172 124 165
+                                                     L 128 145
+                                                     C 132 135 134 125 134 115
+                                                     L 134 85
+                                                     C 132 75 125 65 110 58 Z"
+                                                     fill="#f5e6d3"/>
+
+                                            {/* 왼팔 - 자연스러운 굵기와 곡선 */}
+                                            <path d="M 68 80
+                                                     Q 58 85 50 100
+                                                     C 45 110 42 125 40 138
+                                                     L 38 148
+                                                     C 37 152 38 155 40 156
+                                                     C 42 157 44 156 45 152
+                                                     L 47 138
+                                                     C 49 125 52 110 58 100
+                                                     Q 64 88 72 82 Z"
+                                                     fill="#f5e6d3"/>
+
+                                            {/* 왼손 */}
+                                            <ellipse cx="40" cy="156" rx="6" ry="8" fill="#f5e6d3"/>
+
+                                            {/* 오른팔 */}
+                                            <path d="M 132 80
+                                                     Q 142 85 150 100
+                                                     C 155 110 158 125 160 138
+                                                     L 162 148
+                                                     C 163 152 162 155 160 156
+                                                     C 158 157 156 156 155 152
+                                                     L 153 138
+                                                     C 151 125 148 110 142 100
+                                                     Q 136 88 128 82 Z"
+                                                     fill="#f5e6d3"/>
+
+                                            {/* 오른손 */}
+                                            <ellipse cx="160" cy="156" rx="6" ry="8" fill="#f5e6d3"/>
+
+                                            {/* 왼다리 - 해부학적 굵기 변화 */}
+                                            <path d="M 78 180
+                                                     C 76 190 75 205 74 225
+                                                     C 73 245 72 265 71 285
+                                                     L 70 315
+                                                     C 69 325 70 332 72 335
+                                                     L 75 337
+                                                     C 78 337 80 335 81 330
+                                                     L 82 285
+                                                     C 83 265 84 245 85 225
+                                                     C 86 205 87 190 88 182 Z"
+                                                     fill="#f5e6d3"/>
+
+                                            {/* 왼발 */}
+                                            <ellipse cx="73" cy="338" rx="8" ry="5" fill="#f5e6d3"/>
+                                            <path d="M 73 338 L 80 340 Q 82 341 81 343 L 73 342 Z" fill="#f5e6d3"/>
+
+                                            {/* 오른다리 */}
+                                            <path d="M 122 180
+                                                     C 124 190 125 205 126 225
+                                                     C 127 245 128 265 129 285
+                                                     L 130 315
+                                                     C 131 325 130 332 128 335
+                                                     L 125 337
+                                                     C 122 337 120 335 119 330
+                                                     L 118 285
+                                                     C 117 265 116 245 115 225
+                                                     C 114 205 113 190 112 182 Z"
+                                                     fill="#f5e6d3"/>
+
+                                            {/* 오른발 */}
+                                            <ellipse cx="127" cy="338" rx="8" ry="5" fill="#f5e6d3"/>
+                                            <path d="M 127 338 L 120 340 Q 118 341 119 343 L 127 342 Z" fill="#f5e6d3"/>
                                         </g>
-                                        <text x="100" y="385" textAnchor="middle" fill="#6c757d" fontSize="12">클릭하여 감각 추가</text>
+                                        <text x="100" y="380" textAnchor="middle" fill="#6c757d" fontSize="11" fontWeight="500">클릭하여 감각 기록</text>
                                     </svg>
                                     {bodySensations.map((sensation, index) => (
                                         <div
