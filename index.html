@@ -476,12 +476,35 @@
                 }
             };
 
+            // 클릭 위치로 신체 부위 자동 감지
+            const detectBodyArea = (x, y) => {
+                // y 값 기준으로 부위 감지
+                if (y < 15) return '머리';
+                if (y < 17) return '목';
+                if (y < 30) return '어깨';
+                if (y < 50) return '가슴';
+                if (y < 65) return '배';
+                if (y < 80) return '다리';
+                if (y < 95) return '발';
+
+                // x 값으로 좌우 구분
+                if (x < 30 || x > 70) {
+                    if (y < 40) return '팔';
+                    if (y < 70) return '손';
+                }
+
+                return '몸통';
+            };
+
             const handleBodyClick = (e) => {
                 const rect = e.target.getBoundingClientRect();
                 const x = ((e.clientX - rect.left) / rect.width * 100).toFixed(1);
                 const y = ((e.clientY - rect.top) / rect.height * 100).toFixed(1);
 
-                const area = prompt('신체 부위를 선택하세요:\n' + bodyAreas.join(', '));
+                // 클릭 위치로 자동 감지
+                const detectedArea = detectBodyArea(parseFloat(x), parseFloat(y));
+
+                const area = prompt(`신체 부위를 선택하세요 (감지됨: ${detectedArea}):\n` + bodyAreas.join(', '), detectedArea);
                 if (!area) return;
 
                 const type = prompt('감각 타입을 선택하세요:\n' + sensationTypes.join(', '));
