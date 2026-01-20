@@ -595,30 +595,75 @@
                         <div className="body-map-container">
                             <div className="body-diagram" onClick={handleBodyClick} style={{ position: 'relative' }}>
                                 <svg width="200" height="400" style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none' }}>
-                                    {/* 머리 */}
-                                    <ellipse cx="100" cy="40" rx="25" ry="30" fill="#e9ecef" stroke="#adb5bd" strokeWidth="2"/>
+                                    {/* 사람 실루엣 */}
+                                    <g fill="#e9ecef" stroke="#adb5bd" strokeWidth="2" strokeLinejoin="round">
+                                        {/* 머리 */}
+                                        <ellipse cx="100" cy="35" rx="22" ry="28"/>
 
-                                    {/* 목 */}
-                                    <rect x="90" y="65" width="20" height="15" fill="#e9ecef" stroke="#adb5bd" strokeWidth="2"/>
+                                        {/* 목 */}
+                                        <path d="M 88 58 Q 88 70 90 73 L 110 73 Q 112 70 112 58 Z"/>
 
-                                    {/* 몸통 */}
-                                    <ellipse cx="100" cy="130" rx="45" ry="60" fill="#e9ecef" stroke="#adb5bd" strokeWidth="2"/>
+                                        {/* 몸통 (상체) */}
+                                        <path d="M 90 73
+                                                 Q 70 85 65 100
+                                                 L 65 120
+                                                 Q 65 145 70 155
+                                                 L 75 175
+                                                 Q 80 185 100 188
+                                                 Q 120 185 125 175
+                                                 L 130 155
+                                                 Q 135 145 135 120
+                                                 L 135 100
+                                                 Q 130 85 110 73 Z"/>
 
-                                    {/* 왼팔 */}
-                                    <line x1="65" y1="95" x2="35" y2="150" stroke="#adb5bd" strokeWidth="12" strokeLinecap="round"/>
-                                    <circle cx="35" cy="155" r="8" fill="#e9ecef" stroke="#adb5bd" strokeWidth="2"/>
+                                        {/* 왼팔 */}
+                                        <path d="M 65 95
+                                                 Q 55 100 48 115
+                                                 Q 42 130 40 145
+                                                 L 38 155
+                                                 Q 37 158 38 160
+                                                 L 42 162
+                                                 Q 44 162 45 160
+                                                 L 47 145
+                                                 Q 50 130 56 115
+                                                 Q 62 102 68 100 Z"/>
 
-                                    {/* 오른팔 */}
-                                    <line x1="135" y1="95" x2="165" y2="150" stroke="#adb5bd" strokeWidth="12" strokeLinecap="round"/>
-                                    <circle cx="165" cy="155" r="8" fill="#e9ecef" stroke="#adb5bd" strokeWidth="2"/>
+                                        {/* 오른팔 */}
+                                        <path d="M 135 95
+                                                 Q 145 100 152 115
+                                                 Q 158 130 160 145
+                                                 L 162 155
+                                                 Q 163 158 162 160
+                                                 L 158 162
+                                                 Q 156 162 155 160
+                                                 L 153 145
+                                                 Q 150 130 144 115
+                                                 Q 138 102 132 100 Z"/>
 
-                                    {/* 왼다리 */}
-                                    <line x1="80" y1="185" x2="75" y2="320" stroke="#adb5bd" strokeWidth="15" strokeLinecap="round"/>
-                                    <ellipse cx="75" cy="330" rx="10" ry="15" fill="#e9ecef" stroke="#adb5bd" strokeWidth="2"/>
+                                        {/* 왼다리 */}
+                                        <path d="M 78 188
+                                                 Q 76 210 74 240
+                                                 Q 72 270 71 300
+                                                 L 70 325
+                                                 Q 69 335 72 340
+                                                 L 78 342
+                                                 Q 82 342 83 338
+                                                 L 82 300
+                                                 Q 83 270 85 240
+                                                 Q 86 215 88 195 Z"/>
 
-                                    {/* 오른다리 */}
-                                    <line x1="120" y1="185" x2="125" y2="320" stroke="#adb5bd" strokeWidth="15" strokeLinecap="round"/>
-                                    <ellipse cx="125" cy="330" rx="10" ry="15" fill="#e9ecef" stroke="#adb5bd" strokeWidth="2"/>
+                                        {/* 오른다리 */}
+                                        <path d="M 122 188
+                                                 Q 124 210 126 240
+                                                 Q 128 270 129 300
+                                                 L 130 325
+                                                 Q 131 335 128 340
+                                                 L 122 342
+                                                 Q 118 342 117 338
+                                                 L 118 300
+                                                 Q 117 270 115 240
+                                                 Q 114 215 112 195 Z"/>
+                                    </g>
 
                                     {/* 안내 텍스트 */}
                                     <text x="100" y="385" textAnchor="middle" fill="#6c757d" fontSize="12">클릭하여 감각 추가</text>
