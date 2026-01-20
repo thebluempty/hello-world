@@ -534,13 +534,41 @@
                 }
             };
 
+            // 2D 클릭 위치로 신체 부위 자동 감지
+            const detectBodyArea = (x, y) => {
+                // 머리
+                if (y < 15) return '머리';
+                // 목
+                if (y < 18) return '목';
+                // 어깨
+                if (y < 22 && (x < 35 || x > 65)) return '어깨';
+                // 가슴
+                if (y < 35) return '가슴';
+                // 배
+                if (y < 50) return '배';
+                // 팔 (좌우)
+                if (x < 30 || x > 70) {
+                    if (y < 40) return '팔';
+                    if (y < 50) return '손';
+                }
+                // 다리
+                if (y < 85) return '다리';
+                // 발
+                if (y < 95) return '발';
+
+                return '몸통';
+            };
+
             // 2D 클릭 처리
             const handleBodyClick = (e) => {
                 const rect = e.target.getBoundingClientRect();
                 const x = ((e.clientX - rect.left) / rect.width * 100).toFixed(1);
                 const y = ((e.clientY - rect.top) / rect.height * 100).toFixed(1);
 
-                const area = prompt(`신체 부위를 선택하세요:\n` + bodyAreas.join(', '));
+                // 자동 감지
+                const detectedArea = detectBodyArea(parseFloat(x), parseFloat(y));
+
+                const area = prompt(`신체 부위 (감지: ${detectedArea}):\n` + bodyAreas.join(', '), detectedArea);
                 if (!area) return;
 
                 const type = prompt('감각 타입을 선택하세요:\n' + sensationTypes.join(', '));
@@ -866,39 +894,41 @@
 
                 // 클린업
                 return () => {
+                    console.log('3D cleanup started');
+
                     // 애니메이션 중단
                     if (animationId) {
                         cancelAnimationFrame(animationId);
                     }
 
                     // 이벤트 리스너 제거
-                    renderer.domElement.removeEventListener('click', onMouseClick);
+                    if (renderer && renderer.domElement) {
+                        renderer.domElement.removeEventListener('click', onMouseClick);
+                    }
 
-                    // DOM에서 canvas 제거
-                    if (containerRef.current && renderer.domElement) {
-                        try {
-                            containerRef.current.removeChild(renderer.domElement);
-                        } catch (e) {
-                            console.log('Canvas already removed');
+                    // 씬의 모든 객체 제거
+                    if (scene) {
+                        while(scene.children.length > 0) {
+                            const object = scene.children[0];
+                            if (object.geometry) object.geometry.dispose();
+                            if (object.material) {
+                                if (Array.isArray(object.material)) {
+                                    object.material.forEach(mat => mat.dispose());
+                                } else {
+                                    object.material.dispose();
+                                }
+                            }
+                            scene.remove(object);
                         }
                     }
 
                     // Three.js 리소스 정리
-                    controls.dispose();
-                    renderer.dispose();
+                    if (controls) controls.dispose();
+                    if (renderer) renderer.dispose();
 
-                    // 씬의 모든 객체 제거
-                    while(scene.children.length > 0) {
-                        const object = scene.children[0];
-                        if (object.geometry) object.geometry.dispose();
-                        if (object.material) {
-                            if (Array.isArray(object.material)) {
-                                object.material.forEach(mat => mat.dispose());
-                            } else {
-                                object.material.dispose();
-                            }
-                        }
-                        scene.remove(object);
+                    // 강제로 container 비우기 (가장 중요!)
+                    if (containerRef.current) {
+                        containerRef.current.innerHTML = '';
                     }
 
                     // ref 초기화
@@ -907,6 +937,8 @@
                     rendererRef.current = null;
                     controlsRef.current = null;
                     bodyPartsRef.current = {};
+
+                    console.log('3D cleanup completed');
                 };
             }, [use3D]);
 
@@ -1008,97 +1040,117 @@
                         <div className="body-map-container">
                             {!use3D ? (
                                 <div className="body-diagram" onClick={handleBodyClick} style={{ position: 'relative' }}>
-                                    <svg width="200" height="400" style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none' }}>
-                                        <g fill="#f5e6d3" stroke="#c4a57b" strokeWidth="1.5">
-                                            {/* 머리 - 더 사실적인 형태 */}
-                                            <ellipse cx="100" cy="30" rx="18" ry="23" fill="#f5e6d3"/>
+                                    <svg width="200" height="400" viewBox="0 0 200 400" style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none' }}>
+                                        <defs>
+                                            <linearGradient id="skinGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                                <stop offset="0%" style={{stopColor:'#f0d5b8', stopOpacity:1}} />
+                                                <stop offset="50%" style={{stopColor:'#f5e6d3', stopOpacity:1}} />
+                                                <stop offset="100%" style={{stopColor:'#f0d5b8', stopOpacity:1}} />
+                                            </linearGradient>
+                                        </defs>
+                                        <g stroke="#c4a57b" strokeWidth="1.2" strokeLinejoin="round" strokeLinecap="round">
+                                            {/* 완성된 인체 실루엣 - 한 번에 그리기 */}
+                                            <path d="
+                                                M 100 8
+                                                C 115 8 120 15 120 25
+                                                C 120 35 115 50 100 50
+                                                C 85 50 80 35 80 25
+                                                C 80 15 85 8 100 8
+                                                Z
+                                            " fill="url(#skinGradient)"/>
 
-                                            {/* 목 - 자연스러운 곡선 */}
-                                            <path d="M 88 50 Q 89 55 90 58 L 110 58 Q 111 55 112 50" fill="#f5e6d3"/>
+                                            {/* 목 */}
+                                            <path d="M 88 48 Q 88 54 90 58 L 110 58 Q 112 54 112 48" fill="url(#skinGradient)"/>
 
-                                            {/* 어깨 라인 - 둥근 형태 */}
-                                            <path d="M 90 58 Q 65 60 55 70 Q 55 75 58 78 L 68 80" fill="none" stroke="#c4a57b" strokeWidth="2"/>
-                                            <path d="M 110 58 Q 135 60 145 70 Q 145 75 142 78 L 132 80" fill="none" stroke="#c4a57b" strokeWidth="2"/>
+                                            {/* 몸통 전체 */}
+                                            <path d="
+                                                M 90 58
+                                                C 70 62 62 68 60 80
+                                                L 60 110
+                                                C 60 125 62 138 66 148
+                                                L 72 168
+                                                C 74 176 82 183 100 185
+                                                C 118 183 126 176 128 168
+                                                L 134 148
+                                                C 138 138 140 125 140 110
+                                                L 140 80
+                                                C 138 68 130 62 110 58
+                                                Z
+                                            " fill="url(#skinGradient)"/>
 
-                                            {/* 몸통 - 인체 비율 */}
-                                            <path d="M 90 58
-                                                     C 75 65 68 75 66 85
-                                                     L 66 115
-                                                     C 66 125 68 135 72 145
-                                                     L 76 165
-                                                     C 78 172 85 178 100 180
-                                                     C 115 178 122 172 124 165
-                                                     L 128 145
-                                                     C 132 135 134 125 134 115
-                                                     L 134 85
-                                                     C 132 75 125 65 110 58 Z"
-                                                     fill="#f5e6d3"/>
-
-                                            {/* 왼팔 - 자연스러운 굵기와 곡선 */}
-                                            <path d="M 68 80
-                                                     Q 58 85 50 100
-                                                     C 45 110 42 125 40 138
-                                                     L 38 148
-                                                     C 37 152 38 155 40 156
-                                                     C 42 157 44 156 45 152
-                                                     L 47 138
-                                                     C 49 125 52 110 58 100
-                                                     Q 64 88 72 82 Z"
-                                                     fill="#f5e6d3"/>
+                                            {/* 왼팔 */}
+                                            <path d="
+                                                M 62 70
+                                                C 52 75 45 88 40 105
+                                                C 37 118 35 132 34 145
+                                                L 33 158
+                                                C 32 162 34 165 37 166
+                                                C 40 167 43 165 44 161
+                                                L 45 145
+                                                C 46 132 49 118 54 105
+                                                C 58 92 63 82 68 76
+                                                Z
+                                            " fill="url(#skinGradient)"/>
 
                                             {/* 왼손 */}
-                                            <ellipse cx="40" cy="156" rx="6" ry="8" fill="#f5e6d3"/>
+                                            <ellipse cx="37" cy="168" rx="7" ry="9" fill="url(#skinGradient)"/>
 
                                             {/* 오른팔 */}
-                                            <path d="M 132 80
-                                                     Q 142 85 150 100
-                                                     C 155 110 158 125 160 138
-                                                     L 162 148
-                                                     C 163 152 162 155 160 156
-                                                     C 158 157 156 156 155 152
-                                                     L 153 138
-                                                     C 151 125 148 110 142 100
-                                                     Q 136 88 128 82 Z"
-                                                     fill="#f5e6d3"/>
+                                            <path d="
+                                                M 138 70
+                                                C 148 75 155 88 160 105
+                                                C 163 118 165 132 166 145
+                                                L 167 158
+                                                C 168 162 166 165 163 166
+                                                C 160 167 157 165 156 161
+                                                L 155 145
+                                                C 154 132 151 118 146 105
+                                                C 142 92 137 82 132 76
+                                                Z
+                                            " fill="url(#skinGradient)"/>
 
                                             {/* 오른손 */}
-                                            <ellipse cx="160" cy="156" rx="6" ry="8" fill="#f5e6d3"/>
+                                            <ellipse cx="163" cy="168" rx="7" ry="9" fill="url(#skinGradient)"/>
 
-                                            {/* 왼다리 - 해부학적 굵기 변화 */}
-                                            <path d="M 78 180
-                                                     C 76 190 75 205 74 225
-                                                     C 73 245 72 265 71 285
-                                                     L 70 315
-                                                     C 69 325 70 332 72 335
-                                                     L 75 337
-                                                     C 78 337 80 335 81 330
-                                                     L 82 285
-                                                     C 83 265 84 245 85 225
-                                                     C 86 205 87 190 88 182 Z"
-                                                     fill="#f5e6d3"/>
+                                            {/* 왼 다리 */}
+                                            <path d="
+                                                M 76 185
+                                                C 73 200 70 220 68 245
+                                                C 67 265 66 285 66 305
+                                                L 66 325
+                                                C 66 335 68 343 71 348
+                                                L 74 352
+                                                C 77 353 80 351 82 346
+                                                L 83 305
+                                                C 83 285 84 265 86 245
+                                                C 88 220 90 200 92 190
+                                                Z
+                                            " fill="url(#skinGradient)"/>
 
                                             {/* 왼발 */}
-                                            <ellipse cx="73" cy="338" rx="8" ry="5" fill="#f5e6d3"/>
-                                            <path d="M 73 338 L 80 340 Q 82 341 81 343 L 73 342 Z" fill="#f5e6d3"/>
+                                            <ellipse cx="72" cy="354" rx="9" ry="6" fill="url(#skinGradient)"/>
+                                            <path d="M 72 352 L 82 355 Q 85 356 84 358 L 72 356 Z" fill="url(#skinGradient)"/>
 
-                                            {/* 오른다리 */}
-                                            <path d="M 122 180
-                                                     C 124 190 125 205 126 225
-                                                     C 127 245 128 265 129 285
-                                                     L 130 315
-                                                     C 131 325 130 332 128 335
-                                                     L 125 337
-                                                     C 122 337 120 335 119 330
-                                                     L 118 285
-                                                     C 117 265 116 245 115 225
-                                                     C 114 205 113 190 112 182 Z"
-                                                     fill="#f5e6d3"/>
+                                            {/* 오른 다리 */}
+                                            <path d="
+                                                M 124 185
+                                                C 127 200 130 220 132 245
+                                                C 133 265 134 285 134 305
+                                                L 134 325
+                                                C 134 335 132 343 129 348
+                                                L 126 352
+                                                C 123 353 120 351 118 346
+                                                L 117 305
+                                                C 117 285 116 265 114 245
+                                                C 112 220 110 200 108 190
+                                                Z
+                                            " fill="url(#skinGradient)"/>
 
                                             {/* 오른발 */}
-                                            <ellipse cx="127" cy="338" rx="8" ry="5" fill="#f5e6d3"/>
-                                            <path d="M 127 338 L 120 340 Q 118 341 119 343 L 127 342 Z" fill="#f5e6d3"/>
+                                            <ellipse cx="128" cy="354" rx="9" ry="6" fill="url(#skinGradient)"/>
+                                            <path d="M 128 352 L 118 355 Q 115 356 116 358 L 128 356 Z" fill="url(#skinGradient)"/>
                                         </g>
-                                        <text x="100" y="380" textAnchor="middle" fill="#6c757d" fontSize="11" fontWeight="500">클릭하여 감각 기록</text>
+                                        <text x="100" y="385" textAnchor="middle" fill="#8b7355" fontSize="10" fontWeight="600" opacity="0.8">클릭하여 감각 기록</text>
                                     </svg>
                                     {bodySensations.map((sensation, index) => (
                                         <div
