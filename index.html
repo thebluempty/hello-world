@@ -570,10 +570,36 @@
                     <div className="form-section">
                         <h3>신체 감각</h3>
                         <div className="body-map-container">
-                            <div className="body-diagram" onClick={handleBodyClick}>
-                                <div style={{ textAlign: 'center', paddingTop: '10px', color: '#6c757d' }}>
-                                    전면<br/>클릭하여 감각 추가
-                                </div>
+                            <div className="body-diagram" onClick={handleBodyClick} style={{ position: 'relative' }}>
+                                <svg width="200" height="400" style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none' }}>
+                                    {/* 머리 */}
+                                    <ellipse cx="100" cy="40" rx="25" ry="30" fill="#e9ecef" stroke="#adb5bd" strokeWidth="2"/>
+
+                                    {/* 목 */}
+                                    <rect x="90" y="65" width="20" height="15" fill="#e9ecef" stroke="#adb5bd" strokeWidth="2"/>
+
+                                    {/* 몸통 */}
+                                    <ellipse cx="100" cy="130" rx="45" ry="60" fill="#e9ecef" stroke="#adb5bd" strokeWidth="2"/>
+
+                                    {/* 왼팔 */}
+                                    <line x1="65" y1="95" x2="35" y2="150" stroke="#adb5bd" strokeWidth="12" strokeLinecap="round"/>
+                                    <circle cx="35" cy="155" r="8" fill="#e9ecef" stroke="#adb5bd" strokeWidth="2"/>
+
+                                    {/* 오른팔 */}
+                                    <line x1="135" y1="95" x2="165" y2="150" stroke="#adb5bd" strokeWidth="12" strokeLinecap="round"/>
+                                    <circle cx="165" cy="155" r="8" fill="#e9ecef" stroke="#adb5bd" strokeWidth="2"/>
+
+                                    {/* 왼다리 */}
+                                    <line x1="80" y1="185" x2="75" y2="320" stroke="#adb5bd" strokeWidth="15" strokeLinecap="round"/>
+                                    <ellipse cx="75" cy="330" rx="10" ry="15" fill="#e9ecef" stroke="#adb5bd" strokeWidth="2"/>
+
+                                    {/* 오른다리 */}
+                                    <line x1="120" y1="185" x2="125" y2="320" stroke="#adb5bd" strokeWidth="15" strokeLinecap="round"/>
+                                    <ellipse cx="125" cy="330" rx="10" ry="15" fill="#e9ecef" stroke="#adb5bd" strokeWidth="2"/>
+
+                                    {/* 안내 텍스트 */}
+                                    <text x="100" y="385" textAnchor="middle" fill="#6c757d" fontSize="12">클릭하여 감각 추가</text>
+                                </svg>
                                 {bodySensations.map((sensation, index) => (
                                     <div
                                         key={index}
@@ -1549,7 +1575,7 @@
                 <div className="app-container">
                     <div className="app-header">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                            <h1 style={{ margin: 0 }}>감정 기록 앱</h1>
+                            <h1 style={{ margin: 0 }}>Emoscape v1.0</h1>
                             {records.length > 0 && (
                                 <div style={{ display: 'flex', gap: '10px' }}>
                                     <button
