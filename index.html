@@ -502,7 +502,8 @@
             const [locationType, setLocationType] = useState('category');
             const [locationValue, setLocationValue] = useState('집');
             const [customCategories, setCustomCategories] = useState({});
-            const [viewMode, setViewMode] = useState('surface'); // 'surface' or 'internal'
+            const [use3D, setUse3D] = useState(false);
+            const [viewMode, setViewMode] = useState('surface');
             const [hoveredPart, setHoveredPart] = useState(null);
 
             const containerRef = useRef(null);
@@ -533,13 +534,37 @@
                 }
             };
 
+            // 2D 클릭 처리
+            const handleBodyClick = (e) => {
+                const rect = e.target.getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width * 100).toFixed(1);
+                const y = ((e.clientY - rect.top) / rect.height * 100).toFixed(1);
+
+                const area = prompt(`신체 부위를 선택하세요:\n` + bodyAreas.join(', '));
+                if (!area) return;
+
+                const type = prompt('감각 타입을 선택하세요:\n' + sensationTypes.join(', '));
+                if (!type) return;
+
+                const description = prompt('구체적인 설명을 입력하세요:');
+
+                setBodySensations([...bodySensations, {
+                    x,
+                    y,
+                    area,
+                    specificLocation: area,
+                    sensationType: type,
+                    description: description || ''
+                }]);
+            };
+
             const removeSensation = (index) => {
                 setBodySensations(bodySensations.filter((_, i) => i !== index));
             };
 
             // 3D 씬 초기화
             useEffect(() => {
-                if (!containerRef.current) return;
+                if (!use3D || !containerRef.current) return;
 
                 // 씬, 카메라, 렌더러 설정
                 const scene = new THREE.Scene();
@@ -794,14 +819,16 @@
                 // 클린업
                 return () => {
                     renderer.domElement.removeEventListener('click', onMouseClick);
-                    containerRef.current?.removeChild(renderer.domElement);
+                    if (containerRef.current && renderer.domElement.parentNode === containerRef.current) {
+                        containerRef.current.removeChild(renderer.domElement);
+                    }
                     renderer.dispose();
                 };
-            }, []);
+            }, [use3D]);
 
             // viewMode 변경에 따른 투명도 조절
             useEffect(() => {
-                if (!bodyPartsRef.current) return;
+                if (!use3D || !bodyPartsRef.current) return;
 
                 Object.values(bodyPartsRef.current).forEach(part => {
                     if (part.userData.layer === 'surface') {
@@ -810,7 +837,7 @@
                         part.material.opacity = viewMode === 'internal' ? 0.8 : 0;
                     }
                 });
-            }, [viewMode]);
+            }, [viewMode, use3D]);
 
             const handleSave = () => {
                 const record = {
@@ -877,28 +904,70 @@
                     </div>
 
                     <div className="form-section">
-                        <h3>신체 감각 (3D)</h3>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                            <h3>신체 감각</h3>
+                            <button
+                                onClick={() => setUse3D(!use3D)}
+                                style={{
+                                    padding: '8px 16px',
+                                    background: use3D ? '#667eea' : '#6c757d',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    cursor: 'pointer',
+                                    fontWeight: '600'
+                                }}
+                            >
+                                {use3D ? '2D 모드' : '3D 모드'}
+                            </button>
+                        </div>
                         <div className="body-map-container">
-                            <div className="body-3d-viewer" ref={containerRef}>
-                                <div className="body-3d-controls">
-                                    <label>보기 모드</label>
-                                    <select value={viewMode} onChange={(e) => setViewMode(e.target.value)}>
-                                        <option value="surface">표면</option>
-                                        <option value="internal">내부 장기</option>
-                                    </select>
-                                    <div style={{ fontSize: '0.8rem', marginTop: '10px', color: '#6c757d' }}>
-                                        <strong>조작법:</strong><br/>
-                                        • 마우스 드래그: 회전<br/>
-                                        • 휠: 확대/축소<br/>
-                                        • 클릭: 부위 선택
+                            {!use3D ? (
+                                <div className="body-diagram" onClick={handleBodyClick} style={{ position: 'relative' }}>
+                                    <svg width="200" height="400" style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none' }}>
+                                        <g fill="#e9ecef" stroke="#adb5bd" strokeWidth="2" strokeLinejoin="round">
+                                            <ellipse cx="100" cy="35" rx="22" ry="28"/>
+                                            <path d="M 88 58 Q 88 70 90 73 L 110 73 Q 112 70 112 58 Z"/>
+                                            <path d="M 90 73 Q 70 85 65 100 L 65 120 Q 65 145 70 155 L 75 175 Q 80 185 100 188 Q 120 185 125 175 L 130 155 Q 135 145 135 120 L 135 100 Q 130 85 110 73 Z"/>
+                                            <path d="M 65 95 Q 55 100 48 115 Q 42 130 40 145 L 38 155 Q 37 158 38 160 L 42 162 Q 44 162 45 160 L 47 145 Q 50 130 56 115 Q 62 102 68 100 Z"/>
+                                            <path d="M 135 95 Q 145 100 152 115 Q 158 130 160 145 L 162 155 Q 163 158 162 160 L 158 162 Q 156 162 155 160 L 153 145 Q 150 130 144 115 Q 138 102 132 100 Z"/>
+                                            <path d="M 78 188 Q 76 210 74 240 Q 72 270 71 300 L 70 325 Q 69 335 72 340 L 78 342 Q 82 342 83 338 L 82 300 Q 83 270 85 240 Q 86 215 88 195 Z"/>
+                                            <path d="M 122 188 Q 124 210 126 240 Q 128 270 129 300 L 130 325 Q 131 335 128 340 L 122 342 Q 118 342 117 338 L 118 300 Q 117 270 115 240 Q 114 215 112 195 Z"/>
+                                        </g>
+                                        <text x="100" y="385" textAnchor="middle" fill="#6c757d" fontSize="12">클릭하여 감각 추가</text>
+                                    </svg>
+                                    {bodySensations.map((sensation, index) => (
+                                        <div
+                                            key={index}
+                                            className="body-point"
+                                            style={{ left: `${sensation.x}%`, top: `${sensation.y}%` }}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                if (confirm('이 감각을 삭제하시겠습니까?')) {
+                                                    removeSensation(index);
+                                                }
+                                            }}
+                                            title={`${sensation.area} - ${sensation.sensationType}`}
+                                        />
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="body-3d-viewer" ref={containerRef}>
+                                    <div className="body-3d-controls">
+                                        <label>보기 모드</label>
+                                        <select value={viewMode} onChange={(e) => setViewMode(e.target.value)}>
+                                            <option value="surface">표면</option>
+                                            <option value="internal">내부 장기</option>
+                                        </select>
+                                        <div style={{ fontSize: '0.8rem', marginTop: '10px', color: '#6c757d' }}>
+                                            <strong>조작법:</strong><br/>
+                                            • 드래그: 회전<br/>
+                                            • 휠: 확대/축소<br/>
+                                            • 클릭: 부위 선택
+                                        </div>
                                     </div>
                                 </div>
-                                {hoveredPart && (
-                                    <div className="body-3d-info">
-                                        {hoveredPart}
-                                    </div>
-                                )}
-                            </div>
+                            )}
                             <div className="sensation-list">
                                 <h4>기록된 감각</h4>
                                 {bodySensations.map((sensation, index) => (
