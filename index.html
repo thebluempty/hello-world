@@ -606,133 +606,333 @@
                             </div>
                         </div>
                         <div className="body-map-container">
-                            <div className="body-diagram" style={{ position: 'relative' }}>
-                                    <svg width="200" height="400" viewBox="0 0 200 400" style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none' }}>
-                                        <defs>
-                                            <linearGradient id="skinGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                                                <stop offset="0%" style={{stopColor:'#f0d5b8', stopOpacity:1}} />
-                                                <stop offset="50%" style={{stopColor:'#f5e6d3', stopOpacity:1}} />
-                                                <stop offset="100%" style={{stopColor:'#f0d5b8', stopOpacity:1}} />
-                                            </linearGradient>
-                                        </defs>
-                                        <g stroke="#c4a57b" strokeWidth="1.2" strokeLinejoin="round" strokeLinecap="round">
-                                            {/* 완성된 인체 실루엣 - 한 번에 그리기 */}
-                                            <path d="
-                                                M 100 8
-                                                C 115 8 120 15 120 25
-                                                C 120 35 115 50 100 50
-                                                C 85 50 80 35 80 25
-                                                C 80 15 85 8 100 8
-                                                Z
-                                            " fill="url(#skinGradient)"/>
+                            <div className="body-diagram" style={{ position: 'relative', width: '250px', height: '450px' }}>
+                                <svg width="250" height="450" viewBox="0 0 250 450" style={{ position: 'absolute', top: 0, left: 0 }}>
+                                    <defs>
+                                        <linearGradient id="skinGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                            <stop offset="0%" style={{stopColor:'#f0d5b8', stopOpacity:1}} />
+                                            <stop offset="50%" style={{stopColor:'#f5e6d3', stopOpacity:1}} />
+                                            <stop offset="100%" style={{stopColor:'#f0d5b8', stopOpacity:1}} />
+                                        </linearGradient>
+                                        <filter id="glow">
+                                            <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                                            <feMerge>
+                                                <feMergeNode in="coloredBlur"/>
+                                                <feMergeNode in="SourceGraphic"/>
+                                            </feMerge>
+                                        </filter>
+                                    </defs>
+                                    <g stroke="#c4a57b" strokeWidth="1.5" strokeLinejoin="round">
+                                        {gender === 'male' ? (
+                                            <>
+                                                {/* 남성 실루엣 - 각 부위 클릭 가능 */}
 
-                                            {/* 목 */}
-                                            <path d="M 88 48 Q 88 54 90 58 L 110 58 Q 112 54 112 48" fill="url(#skinGradient)"/>
+                                                {/* 머리 */}
+                                                <path
+                                                    d="M 125 10 C 142 10 148 18 148 30 C 148 42 142 55 125 55 C 108 55 102 42 102 30 C 102 18 108 10 125 10 Z"
+                                                    fill={selectedPart === '머리' || hoveredPart === '머리' ? '#ffd4a3' : 'url(#skinGradient)'}
+                                                    filter={selectedPart === '머리' || hoveredPart === '머리' ? 'url(#glow)' : ''}
+                                                    style={{ cursor: 'pointer', transition: 'all 0.3s' }}
+                                                    onMouseEnter={() => setHoveredPart('머리')}
+                                                    onMouseLeave={() => setHoveredPart(null)}
+                                                    onClick={() => handlePartClick('머리')}
+                                                />
 
-                                            {/* 몸통 전체 */}
-                                            <path d="
-                                                M 90 58
-                                                C 70 62 62 68 60 80
-                                                L 60 110
-                                                C 60 125 62 138 66 148
-                                                L 72 168
-                                                C 74 176 82 183 100 185
-                                                C 118 183 126 176 128 168
-                                                L 134 148
-                                                C 138 138 140 125 140 110
-                                                L 140 80
-                                                C 138 68 130 62 110 58
-                                                Z
-                                            " fill="url(#skinGradient)"/>
+                                                {/* 목 */}
+                                                <path
+                                                    d="M 110 53 Q 110 60 112 65 L 138 65 Q 140 60 140 53 Z"
+                                                    fill={selectedPart === '목' || hoveredPart === '목' ? '#ffd4a3' : 'url(#skinGradient)'}
+                                                    filter={selectedPart === '목' || hoveredPart === '목' ? 'url(#glow)' : ''}
+                                                    style={{ cursor: 'pointer', transition: 'all 0.3s' }}
+                                                    onMouseEnter={() => setHoveredPart('목')}
+                                                    onMouseLeave={() => setHoveredPart(null)}
+                                                    onClick={() => handlePartClick('목')}
+                                                />
 
-                                            {/* 왼팔 */}
-                                            <path d="
-                                                M 62 70
-                                                C 52 75 45 88 40 105
-                                                C 37 118 35 132 34 145
-                                                L 33 158
-                                                C 32 162 34 165 37 166
-                                                C 40 167 43 165 44 161
-                                                L 45 145
-                                                C 46 132 49 118 54 105
-                                                C 58 92 63 82 68 76
-                                                Z
-                                            " fill="url(#skinGradient)"/>
+                                                {/* 어깨 */}
+                                                <path
+                                                    d="M 112 65 L 85 75 L 85 90 L 95 90 L 112 80 Z"
+                                                    fill={selectedPart === '어깨' || hoveredPart === '어깨' ? '#ffd4a3' : 'url(#skinGradient)'}
+                                                    filter={selectedPart === '어깨' || hoveredPart === '어깨' ? 'url(#glow)' : ''}
+                                                    style={{ cursor: 'pointer', transition: 'all 0.3s' }}
+                                                    onMouseEnter={() => setHoveredPart('어깨')}
+                                                    onMouseLeave={() => setHoveredPart(null)}
+                                                    onClick={() => handlePartClick('어깨')}
+                                                />
+                                                <path
+                                                    d="M 138 65 L 165 75 L 165 90 L 155 90 L 138 80 Z"
+                                                    fill={selectedPart === '어깨' || hoveredPart === '어깨' ? '#ffd4a3' : 'url(#skinGradient)'}
+                                                    filter={selectedPart === '어깨' || hoveredPart === '어깨' ? 'url(#glow)' : ''}
+                                                    style={{ cursor: 'pointer', transition: 'all 0.3s' }}
+                                                    onMouseEnter={() => setHoveredPart('어깨')}
+                                                    onMouseLeave={() => setHoveredPart(null)}
+                                                    onClick={() => handlePartClick('어깨')}
+                                                />
 
-                                            {/* 왼손 */}
-                                            <ellipse cx="37" cy="168" rx="7" ry="9" fill="url(#skinGradient)"/>
+                                                {/* 가슴 */}
+                                                <path
+                                                    d="M 95 90 L 90 120 L 95 145 L 155 145 L 160 120 L 155 90 Z"
+                                                    fill={selectedPart === '가슴' || hoveredPart === '가슴' ? '#ffd4a3' : 'url(#skinGradient)'}
+                                                    filter={selectedPart === '가슴' || hoveredPart === '가슴' ? 'url(#glow)' : ''}
+                                                    style={{ cursor: 'pointer', transition: 'all 0.3s' }}
+                                                    onMouseEnter={() => setHoveredPart('가슴')}
+                                                    onMouseLeave={() => setHoveredPart(null)}
+                                                    onClick={() => handlePartClick('가슴')}
+                                                />
 
-                                            {/* 오른팔 */}
-                                            <path d="
-                                                M 138 70
-                                                C 148 75 155 88 160 105
-                                                C 163 118 165 132 166 145
-                                                L 167 158
-                                                C 168 162 166 165 163 166
-                                                C 160 167 157 165 156 161
-                                                L 155 145
-                                                C 154 132 151 118 146 105
-                                                C 142 92 137 82 132 76
-                                                Z
-                                            " fill="url(#skinGradient)"/>
+                                                {/* 배 */}
+                                                <path
+                                                    d="M 95 145 L 92 180 L 95 210 L 155 210 L 158 180 L 155 145 Z"
+                                                    fill={selectedPart === '배' || hoveredPart === '배' ? '#ffd4a3' : 'url(#skinGradient)'}
+                                                    filter={selectedPart === '배' || hoveredPart === '배' ? 'url(#glow)' : ''}
+                                                    style={{ cursor: 'pointer', transition: 'all 0.3s' }}
+                                                    onMouseEnter={() => setHoveredPart('배')}
+                                                    onMouseLeave={() => setHoveredPart(null)}
+                                                    onClick={() => handlePartClick('배')}
+                                                />
 
-                                            {/* 오른손 */}
-                                            <ellipse cx="163" cy="168" rx="7" ry="9" fill="url(#skinGradient)"/>
+                                                {/* 왼팔 */}
+                                                <path
+                                                    d="M 85 90 L 70 120 L 62 160 L 58 185 L 62 188 L 70 165 L 78 125 L 85 100 Z"
+                                                    fill={selectedPart === '팔' || hoveredPart === '팔' ? '#ffd4a3' : 'url(#skinGradient)'}
+                                                    filter={selectedPart === '팔' || hoveredPart === '팔' ? 'url(#glow)' : ''}
+                                                    style={{ cursor: 'pointer', transition: 'all 0.3s' }}
+                                                    onMouseEnter={() => setHoveredPart('팔')}
+                                                    onMouseLeave={() => setHoveredPart(null)}
+                                                    onClick={() => handlePartClick('팔')}
+                                                />
+                                                {/* 왼손 */}
+                                                <ellipse
+                                                    cx="60" cy="192" rx="9" ry="11"
+                                                    fill={selectedPart === '손' || hoveredPart === '손' ? '#ffd4a3' : 'url(#skinGradient)'}
+                                                    filter={selectedPart === '손' || hoveredPart === '손' ? 'url(#glow)' : ''}
+                                                    style={{ cursor: 'pointer', transition: 'all 0.3s' }}
+                                                    onMouseEnter={() => setHoveredPart('손')}
+                                                    onMouseLeave={() => setHoveredPart(null)}
+                                                    onClick={() => handlePartClick('손')}
+                                                />
 
-                                            {/* 왼 다리 */}
-                                            <path d="
-                                                M 76 185
-                                                C 73 200 70 220 68 245
-                                                C 67 265 66 285 66 305
-                                                L 66 325
-                                                C 66 335 68 343 71 348
-                                                L 74 352
-                                                C 77 353 80 351 82 346
-                                                L 83 305
-                                                C 83 285 84 265 86 245
-                                                C 88 220 90 200 92 190
-                                                Z
-                                            " fill="url(#skinGradient)"/>
+                                                {/* 오른팔 */}
+                                                <path
+                                                    d="M 165 90 L 180 120 L 188 160 L 192 185 L 188 188 L 180 165 L 172 125 L 165 100 Z"
+                                                    fill={selectedPart === '팔' || hoveredPart === '팔' ? '#ffd4a3' : 'url(#skinGradient)'}
+                                                    filter={selectedPart === '팔' || hoveredPart === '팔' ? 'url(#glow)' : ''}
+                                                    style={{ cursor: 'pointer', transition: 'all 0.3s' }}
+                                                    onMouseEnter={() => setHoveredPart('팔')}
+                                                    onMouseLeave={() => setHoveredPart(null)}
+                                                    onClick={() => handlePartClick('팔')}
+                                                />
+                                                {/* 오른손 */}
+                                                <ellipse
+                                                    cx="190" cy="192" rx="9" ry="11"
+                                                    fill={selectedPart === '손' || hoveredPart === '손' ? '#ffd4a3' : 'url(#skinGradient)'}
+                                                    filter={selectedPart === '손' || hoveredPart === '손' ? 'url(#glow)' : ''}
+                                                    style={{ cursor: 'pointer', transition: 'all 0.3s' }}
+                                                    onMouseEnter={() => setHoveredPart('손')}
+                                                    onMouseLeave={() => setHoveredPart(null)}
+                                                    onClick={() => handlePartClick('손')}
+                                                />
 
-                                            {/* 왼발 */}
-                                            <ellipse cx="72" cy="354" rx="9" ry="6" fill="url(#skinGradient)"/>
-                                            <path d="M 72 352 L 82 355 Q 85 356 84 358 L 72 356 Z" fill="url(#skinGradient)"/>
+                                                {/* 왼 다리 */}
+                                                <path
+                                                    d="M 100 210 L 95 260 L 92 310 L 90 360 L 92 380 L 98 380 L 100 360 L 103 310 L 106 260 L 110 210 Z"
+                                                    fill={selectedPart === '다리' || hoveredPart === '다리' ? '#ffd4a3' : 'url(#skinGradient)'}
+                                                    filter={selectedPart === '다리' || hoveredPart === '다리' ? 'url(#glow)' : ''}
+                                                    style={{ cursor: 'pointer', transition: 'all 0.3s' }}
+                                                    onMouseEnter={() => setHoveredPart('다리')}
+                                                    onMouseLeave={() => setHoveredPart(null)}
+                                                    onClick={() => handlePartClick('다리')}
+                                                />
+                                                {/* 왼발 */}
+                                                <ellipse
+                                                    cx="92" cy="390" rx="11" ry="7"
+                                                    fill={selectedPart === '발' || hoveredPart === '발' ? '#ffd4a3' : 'url(#skinGradient)'}
+                                                    filter={selectedPart === '발' || hoveredPart === '발' ? 'url(#glow)' : ''}
+                                                    style={{ cursor: 'pointer', transition: 'all 0.3s' }}
+                                                    onMouseEnter={() => setHoveredPart('발')}
+                                                    onMouseLeave={() => setHoveredPart(null)}
+                                                    onClick={() => handlePartClick('발')}
+                                                />
 
-                                            {/* 오른 다리 */}
-                                            <path d="
-                                                M 124 185
-                                                C 127 200 130 220 132 245
-                                                C 133 265 134 285 134 305
-                                                L 134 325
-                                                C 134 335 132 343 129 348
-                                                L 126 352
-                                                C 123 353 120 351 118 346
-                                                L 117 305
-                                                C 117 285 116 265 114 245
-                                                C 112 220 110 200 108 190
-                                                Z
-                                            " fill="url(#skinGradient)"/>
+                                                {/* 오른 다리 */}
+                                                <path
+                                                    d="M 150 210 L 155 260 L 158 310 L 160 360 L 158 380 L 152 380 L 150 360 L 147 310 L 144 260 L 140 210 Z"
+                                                    fill={selectedPart === '다리' || hoveredPart === '다리' ? '#ffd4a3' : 'url(#skinGradient)'}
+                                                    filter={selectedPart === '다리' || hoveredPart === '다리' ? 'url(#glow)' : ''}
+                                                    style={{ cursor: 'pointer', transition: 'all 0.3s' }}
+                                                    onMouseEnter={() => setHoveredPart('다리')}
+                                                    onMouseLeave={() => setHoveredPart(null)}
+                                                    onClick={() => handlePartClick('다리')}
+                                                />
+                                                {/* 오른발 */}
+                                                <ellipse
+                                                    cx="158" cy="390" rx="11" ry="7"
+                                                    fill={selectedPart === '발' || hoveredPart === '발' ? '#ffd4a3' : 'url(#skinGradient)'}
+                                                    filter={selectedPart === '발' || hoveredPart === '발' ? 'url(#glow)' : ''}
+                                                    style={{ cursor: 'pointer', transition: 'all 0.3s' }}
+                                                    onMouseEnter={() => setHoveredPart('발')}
+                                                    onMouseLeave={() => setHoveredPart(null)}
+                                                    onClick={() => handlePartClick('발')}
+                                                />
+                                            </>
+                                        ) : (
+                                            <>
+                                                {/* 여성 실루엣 - 각 부위 클릭 가능 */}
 
-                                            {/* 오른발 */}
-                                            <ellipse cx="128" cy="354" rx="9" ry="6" fill="url(#skinGradient)"/>
-                                            <path d="M 128 352 L 118 355 Q 115 356 116 358 L 128 356 Z" fill="url(#skinGradient)"/>
-                                        </g>
-                                        <text x="100" y="385" textAnchor="middle" fill="#8b7355" fontSize="10" fontWeight="600" opacity="0.8">클릭하여 감각 기록</text>
-                                    </svg>
-                                    {bodySensations.map((sensation, index) => (
-                                        <div
-                                            key={index}
-                                            className="body-point"
-                                            style={{ left: `${sensation.x}%`, top: `${sensation.y}%` }}
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                if (confirm('이 감각을 삭제하시겠습니까?')) {
-                                                    removeSensation(index);
-                                                }
-                                            }}
-                                            title={`${sensation.area} - ${sensation.sensationType}`}
-                                        />
-                                    ))}
+                                                {/* 머리 */}
+                                                <path
+                                                    d="M 125 10 C 140 10 146 18 146 30 C 146 42 140 55 125 55 C 110 55 104 42 104 30 C 104 18 110 10 125 10 Z"
+                                                    fill={selectedPart === '머리' || hoveredPart === '머리' ? '#ffd4a3' : 'url(#skinGradient)'}
+                                                    filter={selectedPart === '머리' || hoveredPart === '머리' ? 'url(#glow)' : ''}
+                                                    style={{ cursor: 'pointer', transition: 'all 0.3s' }}
+                                                    onMouseEnter={() => setHoveredPart('머리')}
+                                                    onMouseLeave={() => setHoveredPart(null)}
+                                                    onClick={() => handlePartClick('머리')}
+                                                />
+
+                                                {/* 목 */}
+                                                <path
+                                                    d="M 113 53 Q 113 60 115 65 L 135 65 Q 137 60 137 53 Z"
+                                                    fill={selectedPart === '목' || hoveredPart === '목' ? '#ffd4a3' : 'url(#skinGradient)'}
+                                                    filter={selectedPart === '목' || hoveredPart === '목' ? 'url(#glow)' : ''}
+                                                    style={{ cursor: 'pointer', transition: 'all 0.3s' }}
+                                                    onMouseEnter={() => setHoveredPart('목')}
+                                                    onMouseLeave={() => setHoveredPart(null)}
+                                                    onClick={() => handlePartClick('목')}
+                                                />
+
+                                                {/* 어깨 */}
+                                                <path
+                                                    d="M 115 65 L 95 75 L 95 88 L 103 88 L 115 78 Z"
+                                                    fill={selectedPart === '어깨' || hoveredPart === '어깨' ? '#ffd4a3' : 'url(#skinGradient)'}
+                                                    filter={selectedPart === '어깨' || hoveredPart === '어깨' ? 'url(#glow)' : ''}
+                                                    style={{ cursor: 'pointer', transition: 'all 0.3s' }}
+                                                    onMouseEnter={() => setHoveredPart('어깨')}
+                                                    onMouseLeave={() => setHoveredPart(null)}
+                                                    onClick={() => handlePartClick('어깨')}
+                                                />
+                                                <path
+                                                    d="M 135 65 L 155 75 L 155 88 L 147 88 L 135 78 Z"
+                                                    fill={selectedPart === '어깨' || hoveredPart === '어깨' ? '#ffd4a3' : 'url(#skinGradient)'}
+                                                    filter={selectedPart === '어깨' || hoveredPart === '어깨' ? 'url(#glow)' : ''}
+                                                    style={{ cursor: 'pointer', transition: 'all 0.3s' }}
+                                                    onMouseEnter={() => setHoveredPart('어깨')}
+                                                    onMouseLeave={() => setHoveredPart(null)}
+                                                    onClick={() => handlePartClick('어깨')}
+                                                />
+
+                                                {/* 가슴 */}
+                                                <path
+                                                    d="M 103 88 L 100 105 Q 98 120 100 135 L 105 145 L 145 145 L 150 135 Q 152 120 150 105 L 147 88 Z"
+                                                    fill={selectedPart === '가슴' || hoveredPart === '가슴' ? '#ffd4a3' : 'url(#skinGradient)'}
+                                                    filter={selectedPart === '가슴' || hoveredPart === '가슴' ? 'url(#glow)' : ''}
+                                                    style={{ cursor: 'pointer', transition: 'all 0.3s' }}
+                                                    onMouseEnter={() => setHoveredPart('가슴')}
+                                                    onMouseLeave={() => setHoveredPart(null)}
+                                                    onClick={() => handlePartClick('가슴')}
+                                                />
+
+                                                {/* 배 - 잘록한 허리 */}
+                                                <path
+                                                    d="M 105 145 L 102 165 Q 100 180 105 195 L 110 210 L 140 210 L 145 195 Q 150 180 148 165 L 145 145 Z"
+                                                    fill={selectedPart === '배' || hoveredPart === '배' ? '#ffd4a3' : 'url(#skinGradient)'}
+                                                    filter={selectedPart === '배' || hoveredPart === '배' ? 'url(#glow)' : ''}
+                                                    style={{ cursor: 'pointer', transition: 'all 0.3s' }}
+                                                    onMouseEnter={() => setHoveredPart('배')}
+                                                    onMouseLeave={() => setHoveredPart(null)}
+                                                    onClick={() => handlePartClick('배')}
+                                                />
+
+                                                {/* 왼팔 */}
+                                                <path
+                                                    d="M 95 88 L 82 115 L 74 150 L 70 175 L 68 188 L 72 190 L 78 167 L 86 132 L 95 103 Z"
+                                                    fill={selectedPart === '팔' || hoveredPart === '팔' ? '#ffd4a3' : 'url(#skinGradient)'}
+                                                    filter={selectedPart === '팔' || hoveredPart === '팔' ? 'url(#glow)' : ''}
+                                                    style={{ cursor: 'pointer', transition: 'all 0.3s' }}
+                                                    onMouseEnter={() => setHoveredPart('팔')}
+                                                    onMouseLeave={() => setHoveredPart(null)}
+                                                    onClick={() => handlePartClick('팔')}
+                                                />
+                                                {/* 왼손 */}
+                                                <ellipse
+                                                    cx="69" cy="195" rx="8" ry="10"
+                                                    fill={selectedPart === '손' || hoveredPart === '손' ? '#ffd4a3' : 'url(#skinGradient)'}
+                                                    filter={selectedPart === '손' || hoveredPart === '손' ? 'url(#glow)' : ''}
+                                                    style={{ cursor: 'pointer', transition: 'all 0.3s' }}
+                                                    onMouseEnter={() => setHoveredPart('손')}
+                                                    onMouseLeave={() => setHoveredPart(null)}
+                                                    onClick={() => handlePartClick('손')}
+                                                />
+
+                                                {/* 오른팔 */}
+                                                <path
+                                                    d="M 155 88 L 168 115 L 176 150 L 180 175 L 182 188 L 178 190 L 172 167 L 164 132 L 155 103 Z"
+                                                    fill={selectedPart === '팔' || hoveredPart === '팔' ? '#ffd4a3' : 'url(#skinGradient)'}
+                                                    filter={selectedPart === '팔' || hoveredPart === '팔' ? 'url(#glow)' : ''}
+                                                    style={{ cursor: 'pointer', transition: 'all 0.3s' }}
+                                                    onMouseEnter={() => setHoveredPart('팔')}
+                                                    onMouseLeave={() => setHoveredPart(null)}
+                                                    onClick={() => handlePartClick('팔')}
+                                                />
+                                                {/* 오른손 */}
+                                                <ellipse
+                                                    cx="181" cy="195" rx="8" ry="10"
+                                                    fill={selectedPart === '손' || hoveredPart === '손' ? '#ffd4a3' : 'url(#skinGradient)'}
+                                                    filter={selectedPart === '손' || hoveredPart === '손' ? 'url(#glow)' : ''}
+                                                    style={{ cursor: 'pointer', transition: 'all 0.3s' }}
+                                                    onMouseEnter={() => setHoveredPart('손')}
+                                                    onMouseLeave={() => setHoveredPart(null)}
+                                                    onClick={() => handlePartClick('손')}
+                                                />
+
+                                                {/* 왼 다리 */}
+                                                <path
+                                                    d="M 107 210 L 103 260 L 100 310 L 98 360 L 100 380 L 105 380 L 107 360 L 110 310 L 113 260 L 116 210 Z"
+                                                    fill={selectedPart === '다리' || hoveredPart === '다리' ? '#ffd4a3' : 'url(#skinGradient)'}
+                                                    filter={selectedPart === '다리' || hoveredPart === '다리' ? 'url(#glow)' : ''}
+                                                    style={{ cursor: 'pointer', transition: 'all 0.3s' }}
+                                                    onMouseEnter={() => setHoveredPart('다리')}
+                                                    onMouseLeave={() => setHoveredPart(null)}
+                                                    onClick={() => handlePartClick('다리')}
+                                                />
+                                                {/* 왼발 */}
+                                                <ellipse
+                                                    cx="100" cy="390" rx="10" ry="7"
+                                                    fill={selectedPart === '발' || hoveredPart === '발' ? '#ffd4a3' : 'url(#skinGradient)'}
+                                                    filter={selectedPart === '발' || hoveredPart === '발' ? 'url(#glow)' : ''}
+                                                    style={{ cursor: 'pointer', transition: 'all 0.3s' }}
+                                                    onMouseEnter={() => setHoveredPart('발')}
+                                                    onMouseLeave={() => setHoveredPart(null)}
+                                                    onClick={() => handlePartClick('발')}
+                                                />
+
+                                                {/* 오른 다리 */}
+                                                <path
+                                                    d="M 143 210 L 147 260 L 150 310 L 152 360 L 150 380 L 145 380 L 143 360 L 140 310 L 137 260 L 134 210 Z"
+                                                    fill={selectedPart === '다리' || hoveredPart === '다리' ? '#ffd4a3' : 'url(#skinGradient)'}
+                                                    filter={selectedPart === '다리' || hoveredPart === '다리' ? 'url(#glow)' : ''}
+                                                    style={{ cursor: 'pointer', transition: 'all 0.3s' }}
+                                                    onMouseEnter={() => setHoveredPart('다리')}
+                                                    onMouseLeave={() => setHoveredPart(null)}
+                                                    onClick={() => handlePartClick('다리')}
+                                                />
+                                                {/* 오른발 */}
+                                                <ellipse
+                                                    cx="150" cy="390" rx="10" ry="7"
+                                                    fill={selectedPart === '발' || hoveredPart === '발' ? '#ffd4a3' : 'url(#skinGradient)'}
+                                                    filter={selectedPart === '발' || hoveredPart === '발' ? 'url(#glow)' : ''}
+                                                    style={{ cursor: 'pointer', transition: 'all 0.3s' }}
+                                                    onMouseEnter={() => setHoveredPart('발')}
+                                                    onMouseLeave={() => setHoveredPart(null)}
+                                                    onClick={() => handlePartClick('발')}
+                                                />
+                                            </>
+                                        )}
+                                    </g>
+                                    <text x="125" y="430" textAnchor="middle" fill="#8b7355" fontSize="11" fontWeight="600" opacity="0.8">
+                                        {hoveredPart || '부위를 클릭하세요'}
+                                    </text>
+                                </svg>
                                 </div>
                             <div className="sensation-list">
                                 <h4>기록된 감각</h4>
