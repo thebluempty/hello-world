@@ -8,8 +8,6 @@
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://d3js.org/d3.v7.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <style>
         * {
             margin: 0;
@@ -201,52 +199,6 @@
             border: 2px solid #dee2e6;
             border-radius: 10px;
             cursor: crosshair;
-        }
-
-        .body-3d-viewer {
-            width: 500px;
-            height: 600px;
-            background: #1a1a2e;
-            border: 2px solid #dee2e6;
-            border-radius: 10px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .body-3d-controls {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(255, 255, 255, 0.9);
-            padding: 15px;
-            border-radius: 10px;
-            z-index: 10;
-        }
-
-        .body-3d-controls label {
-            display: block;
-            margin-bottom: 10px;
-            font-size: 0.9rem;
-            color: #495057;
-        }
-
-        .body-3d-controls select {
-            width: 100%;
-            padding: 5px;
-            border: 1px solid #dee2e6;
-            border-radius: 5px;
-            margin-bottom: 10px;
-        }
-
-        .body-3d-info {
-            position: absolute;
-            bottom: 10px;
-            left: 10px;
-            background: rgba(255, 255, 255, 0.9);
-            padding: 10px 15px;
-            border-radius: 8px;
-            font-size: 0.85rem;
-            color: #495057;
         }
 
         .body-point {
@@ -502,16 +454,9 @@
             const [locationType, setLocationType] = useState('category');
             const [locationValue, setLocationValue] = useState('집');
             const [customCategories, setCustomCategories] = useState({});
-            const [use3D, setUse3D] = useState(false);
-            const [viewMode, setViewMode] = useState('surface');
+            const [gender, setGender] = useState('male'); // 'male' or 'female'
             const [hoveredPart, setHoveredPart] = useState(null);
-
-            const containerRef = useRef(null);
-            const sceneRef = useRef(null);
-            const cameraRef = useRef(null);
-            const rendererRef = useRef(null);
-            const controlsRef = useRef(null);
-            const bodyPartsRef = useRef({});
+            const [selectedPart, setSelectedPart] = useState(null);
 
             const allEmotions = [...predefinedEmotions, ...customEmotions];
 
@@ -534,426 +479,31 @@
                 }
             };
 
-            // 2D 클릭 위치로 신체 부위 자동 감지
-            const detectBodyArea = (x, y) => {
-                // 머리
-                if (y < 15) return '머리';
-                // 목
-                if (y < 18) return '목';
-                // 어깨
-                if (y < 22 && (x < 35 || x > 65)) return '어깨';
-                // 가슴
-                if (y < 35) return '가슴';
-                // 배
-                if (y < 50) return '배';
-                // 팔 (좌우)
-                if (x < 30 || x > 70) {
-                    if (y < 40) return '팔';
-                    if (y < 50) return '손';
-                }
-                // 다리
-                if (y < 85) return '다리';
-                // 발
-                if (y < 95) return '발';
-
-                return '몸통';
-            };
-
-            // 2D 클릭 처리
-            const handleBodyClick = (e) => {
-                const rect = e.target.getBoundingClientRect();
-                const x = ((e.clientX - rect.left) / rect.width * 100).toFixed(1);
-                const y = ((e.clientY - rect.top) / rect.height * 100).toFixed(1);
-
-                // 자동 감지
-                const detectedArea = detectBodyArea(parseFloat(x), parseFloat(y));
-
-                const area = prompt(`신체 부위 (감지: ${detectedArea}):\n` + bodyAreas.join(', '), detectedArea);
-                if (!area) return;
-
-                const type = prompt('감각 타입을 선택하세요:\n' + sensationTypes.join(', '));
-                if (!type) return;
-
-                const description = prompt('구체적인 설명을 입력하세요:');
-
-                setBodySensations([...bodySensations, {
-                    x,
-                    y,
-                    area,
-                    specificLocation: area,
-                    sensationType: type,
-                    description: description || ''
-                }]);
-            };
-
             const removeSensation = (index) => {
                 setBodySensations(bodySensations.filter((_, i) => i !== index));
             };
 
-            // 3D 씬 초기화
-            useEffect(() => {
-                if (!use3D || !containerRef.current) return;
+            // 부위 클릭 핸들러
+            const handlePartClick = (partName) => {
+                setSelectedPart(partName);
 
-                // 씬, 카메라, 렌더러 설정
-                const scene = new THREE.Scene();
-                scene.background = new THREE.Color(0x1a1a2e);
-                sceneRef.current = scene;
+                const type = prompt(`${partName}\n감각 타입을 선택하세요:\n` + sensationTypes.join(', '));
+                if (!type) {
+                    setSelectedPart(null);
+                    return;
+                }
 
-                const camera = new THREE.PerspectiveCamera(
-                    50,
-                    500 / 600,
-                    0.1,
-                    1000
-                );
-                camera.position.set(0, 1.5, 5);
-                cameraRef.current = camera;
+                const description = prompt('구체적인 설명을 입력하세요:');
 
-                const renderer = new THREE.WebGLRenderer({ antialias: true });
-                renderer.setSize(500, 600);
-                renderer.shadowMap.enabled = true;
-                containerRef.current.appendChild(renderer.domElement);
-                rendererRef.current = renderer;
+                setBodySensations([...bodySensations, {
+                    area: partName,
+                    specificLocation: partName,
+                    sensationType: type,
+                    description: description || ''
+                }]);
 
-                // OrbitControls 설정
-                const controls = new THREE.OrbitControls(camera, renderer.domElement);
-                controls.enableDamping = true;
-                controls.dampingFactor = 0.05;
-                controls.target.set(0, 1.5, 0);
-                controlsRef.current = controls;
-
-                // 조명 추가
-                const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-                scene.add(ambientLight);
-
-                const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-                directionalLight.position.set(5, 10, 5);
-                directionalLight.castShadow = true;
-                scene.add(directionalLight);
-
-                const frontLight = new THREE.DirectionalLight(0xffffff, 0.5);
-                frontLight.position.set(0, 5, 10);
-                scene.add(frontLight);
-
-                // 3D 인체 모델 생성
-                const bodyParts = {};
-
-                // 머리
-                const headGeometry = new THREE.SphereGeometry(0.25, 32, 32);
-                const surfaceMaterial = new THREE.MeshPhongMaterial({
-                    color: 0xf0d0b0,
-                    transparent: true,
-                    opacity: 0.95
-                });
-                const head = new THREE.Mesh(headGeometry, surfaceMaterial.clone());
-                head.position.set(0, 2.5, 0);
-                head.userData = { part: '머리', layer: 'surface' };
-                scene.add(head);
-                bodyParts.head = head;
-
-                // 목
-                const neckGeometry = new THREE.CylinderGeometry(0.12, 0.15, 0.3, 16);
-                const neck = new THREE.Mesh(neckGeometry, surfaceMaterial.clone());
-                neck.position.set(0, 2.15, 0);
-                neck.userData = { part: '목', layer: 'surface' };
-                scene.add(neck);
-                bodyParts.neck = neck;
-
-                // 몸통 (상체)
-                const torsoGeometry = new THREE.CylinderGeometry(0.3, 0.35, 0.8, 16);
-                const torso = new THREE.Mesh(torsoGeometry, surfaceMaterial.clone());
-                torso.position.set(0, 1.6, 0);
-                torso.userData = { part: '가슴', layer: 'surface' };
-                scene.add(torso);
-                bodyParts.torso = torso;
-
-                // 배
-                const bellyGeometry = new THREE.CylinderGeometry(0.35, 0.3, 0.5, 16);
-                const belly = new THREE.Mesh(bellyGeometry, surfaceMaterial.clone());
-                belly.position.set(0, 0.95, 0);
-                belly.userData = { part: '배', layer: 'surface' };
-                scene.add(belly);
-                bodyParts.belly = belly;
-
-                // 왼팔 (상완)
-                const leftUpperArmGeometry = new THREE.CylinderGeometry(0.08, 0.09, 0.6, 12);
-                const leftUpperArm = new THREE.Mesh(leftUpperArmGeometry, surfaceMaterial.clone());
-                leftUpperArm.position.set(-0.45, 1.7, 0);
-                leftUpperArm.rotation.z = Math.PI * 0.1;
-                leftUpperArm.userData = { part: '팔', layer: 'surface' };
-                scene.add(leftUpperArm);
-                bodyParts.leftUpperArm = leftUpperArm;
-
-                // 왼팔 (하완)
-                const leftForearmGeometry = new THREE.CylinderGeometry(0.07, 0.08, 0.5, 12);
-                const leftForearm = new THREE.Mesh(leftForearmGeometry, surfaceMaterial.clone());
-                leftForearm.position.set(-0.6, 1.15, 0);
-                leftForearm.userData = { part: '팔', layer: 'surface' };
-                scene.add(leftForearm);
-                bodyParts.leftForearm = leftForearm;
-
-                // 왼손
-                const leftHandGeometry = new THREE.SphereGeometry(0.09, 16, 16);
-                const leftHand = new THREE.Mesh(leftHandGeometry, surfaceMaterial.clone());
-                leftHand.position.set(-0.6, 0.85, 0);
-                leftHand.userData = { part: '손', layer: 'surface' };
-                scene.add(leftHand);
-                bodyParts.leftHand = leftHand;
-
-                // 오른팔 (상완)
-                const rightUpperArm = leftUpperArm.clone();
-                rightUpperArm.position.set(0.45, 1.7, 0);
-                rightUpperArm.rotation.z = -Math.PI * 0.1;
-                rightUpperArm.userData = { part: '팔', layer: 'surface' };
-                scene.add(rightUpperArm);
-                bodyParts.rightUpperArm = rightUpperArm;
-
-                // 오른팔 (하완)
-                const rightForearm = leftForearm.clone();
-                rightForearm.position.set(0.6, 1.15, 0);
-                rightForearm.userData = { part: '팔', layer: 'surface' };
-                scene.add(rightForearm);
-                bodyParts.rightForearm = rightForearm;
-
-                // 오른손
-                const rightHand = leftHand.clone();
-                rightHand.position.set(0.6, 0.85, 0);
-                rightHand.userData = { part: '손', layer: 'surface' };
-                scene.add(rightHand);
-                bodyParts.rightHand = rightHand;
-
-                // 왼 허벅지
-                const leftThighGeometry = new THREE.CylinderGeometry(0.15, 0.12, 0.8, 12);
-                const leftThigh = new THREE.Mesh(leftThighGeometry, surfaceMaterial.clone());
-                leftThigh.position.set(-0.15, 0.25, 0);
-                leftThigh.userData = { part: '다리', layer: 'surface' };
-                scene.add(leftThigh);
-                bodyParts.leftThigh = leftThigh;
-
-                // 왼 종아리
-                const leftCalfGeometry = new THREE.CylinderGeometry(0.1, 0.09, 0.8, 12);
-                const leftCalf = new THREE.Mesh(leftCalfGeometry, surfaceMaterial.clone());
-                leftCalf.position.set(-0.15, -0.55, 0);
-                leftCalf.userData = { part: '다리', layer: 'surface' };
-                scene.add(leftCalf);
-                bodyParts.leftCalf = leftCalf;
-
-                // 왼발
-                const leftFootGeometry = new THREE.BoxGeometry(0.12, 0.08, 0.25);
-                const leftFoot = new THREE.Mesh(leftFootGeometry, surfaceMaterial.clone());
-                leftFoot.position.set(-0.15, -0.98, 0.08);
-                leftFoot.userData = { part: '발', layer: 'surface' };
-                scene.add(leftFoot);
-                bodyParts.leftFoot = leftFoot;
-
-                // 오른 허벅지
-                const rightThigh = leftThigh.clone();
-                rightThigh.position.set(0.15, 0.25, 0);
-                rightThigh.userData = { part: '다리', layer: 'surface' };
-                scene.add(rightThigh);
-                bodyParts.rightThigh = rightThigh;
-
-                // 오른 종아리
-                const rightCalf = leftCalf.clone();
-                rightCalf.position.set(0.15, -0.55, 0);
-                rightCalf.userData = { part: '다리', layer: 'surface' };
-                scene.add(rightCalf);
-                bodyParts.rightCalf = rightCalf;
-
-                // 오른발
-                const rightFoot = leftFoot.clone();
-                rightFoot.position.set(0.15, -0.98, 0.08);
-                rightFoot.userData = { part: '발', layer: 'surface' };
-                scene.add(rightFoot);
-                bodyParts.rightFoot = rightFoot;
-
-                // 내부 장기들 (투명하게 시작)
-                // 심장 - 붉은색
-                const heartMaterial = new THREE.MeshPhongMaterial({
-                    color: 0xcc4444,
-                    transparent: true,
-                    opacity: 0
-                });
-                const heartGeometry = new THREE.ConeGeometry(0.12, 0.20, 16);
-                const heart = new THREE.Mesh(heartGeometry, heartMaterial);
-                heart.position.set(-0.08, 1.65, -0.05);
-                heart.rotation.z = Math.PI; // 거꾸로
-                heart.rotation.x = -0.3;
-                heart.userData = { part: '심장', layer: 'internal' };
-                scene.add(heart);
-                bodyParts.heart = heart;
-
-                // 폐 (왼쪽)
-                const lungMaterial = new THREE.MeshPhongMaterial({
-                    color: 0xff9999,
-                    transparent: true,
-                    opacity: 0
-                });
-                const leftLungGeometry = new THREE.BoxGeometry(0.15, 0.35, 0.15);
-                const leftLung = new THREE.Mesh(leftLungGeometry, lungMaterial.clone());
-                leftLung.position.set(-0.18, 1.6, -0.08);
-                leftLung.userData = { part: '폐', layer: 'internal' };
-                scene.add(leftLung);
-                bodyParts.leftLung = leftLung;
-
-                // 폐 (오른쪽)
-                const rightLung = new THREE.Mesh(leftLungGeometry, lungMaterial.clone());
-                rightLung.position.set(0.18, 1.6, -0.08);
-                rightLung.userData = { part: '폐', layer: 'internal' };
-                scene.add(rightLung);
-                bodyParts.rightLung = rightLung;
-
-                // 간 - 갈색
-                const liverMaterial = new THREE.MeshPhongMaterial({
-                    color: 0x8b4513,
-                    transparent: true,
-                    opacity: 0
-                });
-                const liverGeometry = new THREE.BoxGeometry(0.28, 0.12, 0.18);
-                const liver = new THREE.Mesh(liverGeometry, liverMaterial);
-                liver.position.set(0.08, 1.35, -0.05);
-                liver.rotation.z = -0.15;
-                liver.userData = { part: '간', layer: 'internal' };
-                scene.add(liver);
-                bodyParts.liver = liver;
-
-                // 위 - 분홍색
-                const stomachMaterial = new THREE.MeshPhongMaterial({
-                    color: 0xffb3ba,
-                    transparent: true,
-                    opacity: 0
-                });
-                const stomachGeometry = new THREE.CylinderGeometry(0.10, 0.08, 0.25, 16);
-                const stomach = new THREE.Mesh(stomachGeometry, stomachMaterial);
-                stomach.position.set(-0.05, 1.15, -0.08);
-                stomach.rotation.z = 0.3;
-                stomach.userData = { part: '위', layer: 'internal' };
-                scene.add(stomach);
-                bodyParts.stomach = stomach;
-
-                // 장 - 연한 분홍
-                const intestineMaterial = new THREE.MeshPhongMaterial({
-                    color: 0xffd4d4,
-                    transparent: true,
-                    opacity: 0
-                });
-                const intestineGeometry = new THREE.TorusGeometry(0.12, 0.04, 8, 16);
-                const intestine = new THREE.Mesh(intestineGeometry, intestineMaterial);
-                intestine.position.set(0, 0.95, -0.05);
-                intestine.rotation.x = Math.PI / 2;
-                intestine.userData = { part: '장', layer: 'internal' };
-                scene.add(intestine);
-                bodyParts.intestine = intestine;
-
-                bodyPartsRef.current = bodyParts;
-
-                // Raycaster 설정 (클릭 감지)
-                const raycaster = new THREE.Raycaster();
-                const mouse = new THREE.Vector2();
-
-                const onMouseClick = (event) => {
-                    const rect = renderer.domElement.getBoundingClientRect();
-                    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-                    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-                    raycaster.setFromCamera(mouse, camera);
-                    const intersects = raycaster.intersectObjects(scene.children);
-
-                    if (intersects.length > 0) {
-                        const clickedObject = intersects[0].object;
-                        if (clickedObject.userData.part) {
-                            const area = clickedObject.userData.part;
-                            const layer = clickedObject.userData.layer;
-
-                            const type = prompt(`${area} (${layer === 'surface' ? '표면' : '내부'})\n감각 타입을 선택하세요:\n` + sensationTypes.join(', '));
-                            if (!type) return;
-
-                            const description = prompt('구체적인 설명을 입력하세요:');
-
-                            setBodySensations(prev => [...prev, {
-                                area,
-                                specificLocation: area,
-                                sensationType: type,
-                                description: description || '',
-                                layer: layer,
-                                position: clickedObject.position.toArray()
-                            }]);
-                        }
-                    }
-                };
-
-                renderer.domElement.addEventListener('click', onMouseClick);
-
-                // 애니메이션 루프
-                let animationId;
-                const animate = () => {
-                    animationId = requestAnimationFrame(animate);
-                    controls.update();
-                    renderer.render(scene, camera);
-                };
-                animate();
-
-                // 클린업
-                return () => {
-                    console.log('3D cleanup started');
-
-                    // 애니메이션 중단
-                    if (animationId) {
-                        cancelAnimationFrame(animationId);
-                    }
-
-                    // 이벤트 리스너 제거
-                    if (renderer && renderer.domElement) {
-                        renderer.domElement.removeEventListener('click', onMouseClick);
-                    }
-
-                    // 씬의 모든 객체 제거
-                    if (scene) {
-                        while(scene.children.length > 0) {
-                            const object = scene.children[0];
-                            if (object.geometry) object.geometry.dispose();
-                            if (object.material) {
-                                if (Array.isArray(object.material)) {
-                                    object.material.forEach(mat => mat.dispose());
-                                } else {
-                                    object.material.dispose();
-                                }
-                            }
-                            scene.remove(object);
-                        }
-                    }
-
-                    // Three.js 리소스 정리
-                    if (controls) controls.dispose();
-                    if (renderer) renderer.dispose();
-
-                    // 강제로 container 비우기 (가장 중요!)
-                    if (containerRef.current) {
-                        containerRef.current.innerHTML = '';
-                    }
-
-                    // ref 초기화
-                    sceneRef.current = null;
-                    cameraRef.current = null;
-                    rendererRef.current = null;
-                    controlsRef.current = null;
-                    bodyPartsRef.current = {};
-
-                    console.log('3D cleanup completed');
-                };
-            }, [use3D]);
-
-            // viewMode 변경에 따른 투명도 조절
-            useEffect(() => {
-                if (!use3D || !bodyPartsRef.current) return;
-
-                Object.values(bodyPartsRef.current).forEach(part => {
-                    if (part.userData.layer === 'surface') {
-                        part.material.opacity = viewMode === 'internal' ? 0.3 : 0.95;
-                    } else if (part.userData.layer === 'internal') {
-                        part.material.opacity = viewMode === 'internal' ? 0.8 : 0;
-                    }
-                });
-            }, [viewMode, use3D]);
+                setSelectedPart(null);
+            };
 
             const handleSave = () => {
                 const record = {
@@ -1020,26 +570,43 @@
                     </div>
 
                     <div className="form-section">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                            <h3>신체 감각</h3>
-                            <button
-                                onClick={() => setUse3D(!use3D)}
-                                style={{
-                                    padding: '8px 16px',
-                                    background: use3D ? '#667eea' : '#6c757d',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: '8px',
-                                    cursor: 'pointer',
-                                    fontWeight: '600'
-                                }}
-                            >
-                                {use3D ? '2D 모드' : '3D 모드'}
-                            </button>
+                        <div style={{ marginBottom: '15px' }}>
+                            <h3 style={{ marginBottom: '10px' }}>신체 감각</h3>
+                            <div style={{ display: 'flex', gap: '10px' }}>
+                                <button
+                                    onClick={() => setGender('male')}
+                                    style={{
+                                        padding: '8px 16px',
+                                        background: gender === 'male' ? '#667eea' : '#f8f9fa',
+                                        color: gender === 'male' ? 'white' : '#6c757d',
+                                        border: '2px solid ' + (gender === 'male' ? '#667eea' : '#dee2e6'),
+                                        borderRadius: '8px',
+                                        cursor: 'pointer',
+                                        fontWeight: '600',
+                                        transition: 'all 0.3s'
+                                    }}
+                                >
+                                    남성
+                                </button>
+                                <button
+                                    onClick={() => setGender('female')}
+                                    style={{
+                                        padding: '8px 16px',
+                                        background: gender === 'female' ? '#667eea' : '#f8f9fa',
+                                        color: gender === 'female' ? 'white' : '#6c757d',
+                                        border: '2px solid ' + (gender === 'female' ? '#667eea' : '#dee2e6'),
+                                        borderRadius: '8px',
+                                        cursor: 'pointer',
+                                        fontWeight: '600',
+                                        transition: 'all 0.3s'
+                                    }}
+                                >
+                                    여성
+                                </button>
+                            </div>
                         </div>
                         <div className="body-map-container">
-                            {!use3D ? (
-                                <div className="body-diagram" onClick={handleBodyClick} style={{ position: 'relative' }}>
+                            <div className="body-diagram" style={{ position: 'relative' }}>
                                     <svg width="200" height="400" viewBox="0 0 200 400" style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none' }}>
                                         <defs>
                                             <linearGradient id="skinGradient" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -1167,23 +734,6 @@
                                         />
                                     ))}
                                 </div>
-                            ) : (
-                                <div className="body-3d-viewer" ref={containerRef}>
-                                    <div className="body-3d-controls">
-                                        <label>보기 모드</label>
-                                        <select value={viewMode} onChange={(e) => setViewMode(e.target.value)}>
-                                            <option value="surface">표면</option>
-                                            <option value="internal">내부 장기</option>
-                                        </select>
-                                        <div style={{ fontSize: '0.8rem', marginTop: '10px', color: '#6c757d' }}>
-                                            <strong>조작법:</strong><br/>
-                                            • 드래그: 회전<br/>
-                                            • 휠: 확대/축소<br/>
-                                            • 클릭: 부위 선택
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
                             <div className="sensation-list">
                                 <h4>기록된 감각</h4>
                                 {bodySensations.map((sensation, index) => (
