@@ -593,7 +593,7 @@
                             <div style={{
                                 display: 'grid',
                                 gridTemplateColumns: 'repeat(3, 70px)',
-                                gridTemplateRows: 'repeat(9, 35px)',
+                                gridTemplateRows: 'repeat(13, 35px)',
                                 gap: '6px',
                                 alignItems: 'center',
                                 justifyItems: 'center',
@@ -616,34 +616,54 @@
                                 <div></div>
                                 <button onClick={() => handlePartClick('오른어깨')} className="body-part-button">오른어깨</button>
 
-                                {/* Row 4: Upper arms and chest */}
+                                {/* Row 4-5: Upper arms and chest (2 rows) */}
                                 <button onClick={() => handlePartClick('왼팔뚝')} className="body-part-button">왼팔뚝</button>
-                                <button onClick={() => handlePartClick('가슴')} className="body-part-button">가슴</button>
+                                <button onClick={() => handlePartClick('가슴')} className="body-part-button" style={{ gridRow: 'span 2', height: '74px' }}>가슴</button>
                                 <button onClick={() => handlePartClick('오른팔뚝')} className="body-part-button">오른팔뚝</button>
 
-                                {/* Row 5: Forearms and belly */}
+                                {/* Row 5: Continue upper arms */}
                                 <button onClick={() => handlePartClick('왼팔목')} className="body-part-button">왼팔목</button>
-                                <button onClick={() => handlePartClick('배')} className="body-part-button">배</button>
+                                {/* 가슴이 여기 차지 */}
                                 <button onClick={() => handlePartClick('오른팔목')} className="body-part-button">오른팔목</button>
 
-                                {/* Row 6: Hands and hips */}
+                                {/* Row 6-7: Forearms and belly (2 rows) */}
                                 <button onClick={() => handlePartClick('왼손')} className="body-part-button">왼손</button>
-                                <button onClick={() => handlePartClick('골반')} className="body-part-button">골반</button>
+                                <button onClick={() => handlePartClick('배')} className="body-part-button" style={{ gridRow: 'span 2', height: '74px' }}>배</button>
                                 <button onClick={() => handlePartClick('오른손')} className="body-part-button">오른손</button>
 
-                                {/* Row 7: Upper legs */}
+                                {/* Row 7: Continue forearms */}
                                 <div></div>
-                                <button onClick={() => handlePartClick('왼허벅지')} className="body-part-button">왼허벅지</button>
-                                <button onClick={() => handlePartClick('오른허벅지')} className="body-part-button">오른허벅지</button>
+                                {/* 배가 여기 차지 */}
+                                <div></div>
 
-                                {/* Row 8: Lower legs */}
+                                {/* Row 8: Hips */}
                                 <div></div>
-                                <button onClick={() => handlePartClick('왼종아리')} className="body-part-button">왼종아리</button>
-                                <button onClick={() => handlePartClick('오른종아리')} className="body-part-button">오른종아리</button>
+                                <button onClick={() => handlePartClick('골반')} className="body-part-button">골반</button>
+                                <div></div>
 
-                                {/* Row 9: Feet */}
+                                {/* Row 9-10: Upper legs (separated) */}
+                                <button onClick={() => handlePartClick('왼허벅지')} className="body-part-button" style={{ gridRow: 'span 2', height: '74px' }}>왼허벅지</button>
                                 <div></div>
+                                <button onClick={() => handlePartClick('오른허벅지')} className="body-part-button" style={{ gridRow: 'span 2', height: '74px' }}>오른허벅지</button>
+
+                                {/* Row 10: Continue upper legs */}
+                                {/* 왼허벅지가 여기 차지 */}
+                                <div></div>
+                                {/* 오른허벅지가 여기 차지 */}
+
+                                {/* Row 11-12: Lower legs (separated) */}
+                                <button onClick={() => handlePartClick('왼종아리')} className="body-part-button" style={{ gridRow: 'span 2', height: '74px' }}>왼종아리</button>
+                                <div></div>
+                                <button onClick={() => handlePartClick('오른종아리')} className="body-part-button" style={{ gridRow: 'span 2', height: '74px' }}>오른종아리</button>
+
+                                {/* Row 12: Continue lower legs */}
+                                {/* 왼종아리가 여기 차지 */}
+                                <div></div>
+                                {/* 오른종아리가 여기 차지 */}
+
+                                {/* Row 13: Feet */}
                                 <button onClick={() => handlePartClick('왼발')} className="body-part-button">왼발</button>
+                                <div></div>
                                 <button onClick={() => handlePartClick('오른발')} className="body-part-button">오른발</button>
                             </div>
                             <div className="sensation-list">
