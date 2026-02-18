@@ -185,36 +185,6 @@
             color: #667eea;
         }
 
-        .body-map-container {
-            display: flex;
-            gap: 20px;
-            justify-content: center;
-        }
-
-        .body-diagram {
-            position: relative;
-            width: 200px;
-            height: 400px;
-            background: #f8f9fa;
-            border: 2px solid #dee2e6;
-            border-radius: 10px;
-            cursor: crosshair;
-        }
-
-        .body-point {
-            position: absolute;
-            width: 12px;
-            height: 12px;
-            background: #667eea;
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .body-point:hover {
-            transform: translate(-50%, -50%) scale(1.5);
-        }
 
         .sensation-list {
             flex: 1;
@@ -457,11 +427,6 @@
             '희망': '#FFB6C1'
         };
 
-        // 신체 부위
-        const bodyAreas = [
-            '머리', '이마', '눈', '코', '입', '턱', '목', '어깨', '가슴', '배', '등', '팔', '손', '다리', '발'
-        ];
-
         // 감각 타입
         const sensationTypes = [
             '압박', '열감', '통증', '떨림', '무거움', '텅빔', '뻐근함', '시원함', '저림', '가려움'
@@ -479,7 +444,6 @@
             const [emotionIntensities, setEmotionIntensities] = useState({});
             const [bodySensations, setBodySensations] = useState([]);
             const [timestamp, setTimestamp] = useState(new Date().toISOString().slice(0, 16));
-            const [locationType, setLocationType] = useState('category');
             const [locationValue, setLocationValue] = useState('집');
             const [customCategories, setCustomCategories] = useState({});
 
@@ -528,7 +492,7 @@
                     id: Date.now().toString(),
                     timestamp: new Date(timestamp).toISOString(),
                     location: {
-                        type: locationType,
+                        type: 'category',
                         value: locationValue
                     },
                     emotions: selectedEmotions.map(name => ({
@@ -671,7 +635,6 @@
                                 {bodySensations.map((sensation, index) => (
                                     <div key={index} className="sensation-item">
                                         <strong>{sensation.area}</strong>
-                                        {sensation.layer && <span style={{ fontSize: '0.8rem', color: '#6c757d' }}> ({sensation.layer === 'surface' ? '표면' : '내부'})</span>}
                                         <br/>
                                         {sensation.sensationType}
                                         {sensation.description && <div style={{ marginTop: '5px', color: '#6c757d' }}>{sensation.description}</div>}
@@ -814,7 +777,7 @@
                 if (dateFrom && new Date(dateFrom) > recordDate) {
                     return false;
                 }
-                if (dateTo && new Date(dateTo) < recordDate) {
+                if (dateTo && new Date(dateTo + 'T23:59:59') < recordDate) {
                     return false;
                 }
 
@@ -1205,13 +1168,28 @@
                     '턱': { x: 150, y: 95 },
                     '목': { x: 150, y: 120 },
                     '어깨': { x: 150, y: 150 },
+                    '왼어깨': { x: 80, y: 150 },
+                    '오른어깨': { x: 220, y: 150 },
                     '가슴': { x: 150, y: 200 },
-                    '배': { x: 150, y: 270 },
-                    '등': { x: 150, y: 240 },
-                    '팔': { x: 80, y: 200 },
+                    '배': { x: 150, y: 260 },
+                    '등': { x: 150, y: 230 },
+                    '골반': { x: 150, y: 310 },
+                    '팔': { x: 80, y: 210 },
+                    '왼팔뚝': { x: 60, y: 190 },
+                    '오른팔뚝': { x: 240, y: 190 },
+                    '왼팔목': { x: 45, y: 240 },
+                    '오른팔목': { x: 255, y: 240 },
                     '손': { x: 50, y: 280 },
-                    '다리': { x: 150, y: 380 },
-                    '발': { x: 150, y: 460 }
+                    '왼손': { x: 35, y: 280 },
+                    '오른손': { x: 265, y: 280 },
+                    '다리': { x: 150, y: 370 },
+                    '왼허벅지': { x: 110, y: 360 },
+                    '오른허벅지': { x: 190, y: 360 },
+                    '왼종아리': { x: 105, y: 430 },
+                    '오른종아리': { x: 195, y: 430 },
+                    '발': { x: 150, y: 480 },
+                    '왼발': { x: 105, y: 490 },
+                    '오른발': { x: 195, y: 490 }
                 };
 
                 // 히트맵 원 그리기
@@ -1232,8 +1210,8 @@
                         .style('cursor', 'pointer')
                         .on('mouseover', function(event) {
                             d3.select(this).attr('opacity', 1);
-                            // 툴팁 표시
-                            const tooltip = d3.select('body').append('div')
+                            d3.selectAll('.tooltip').remove();
+                            d3.select('body').append('div')
                                 .attr('class', 'tooltip')
                                 .style('position', 'absolute')
                                 .style('opacity', 1)
@@ -1406,6 +1384,7 @@
                     return recordTime >= startTime && recordTime < endTime;
                 });
 
+                d3.selectAll('.tooltip').remove();
                 const tooltip = d3.select('body').append('div')
                     .attr('class', 'tooltip')
                     .style('position', 'absolute')
