@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>감정 기록 앱</title>
+    <title>Emoscape - 감정 기록 앱</title>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -204,14 +204,15 @@
             border-radius: 8px;
             color: #667eea;
             font-weight: 600;
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             cursor: pointer;
             transition: all 0.3s;
             width: 65px;
-            height: 32px;
+            min-height: 44px;
             display: flex;
             align-items: center;
             justify-content: center;
+            position: relative;
         }
 
         .body-part-button:hover {
@@ -223,6 +224,21 @@
 
         .body-part-button:active {
             transform: translateY(0);
+        }
+
+        .body-part-button.has-sensation {
+            background: #e8ecff;
+            border-color: #4a5fc1;
+            color: #4a5fc1;
+        }
+
+        .body-part-button.has-sensation::after {
+            content: '●';
+            font-size: 0.5rem;
+            position: absolute;
+            top: 2px;
+            right: 3px;
+            color: #4a5fc1;
         }
 
         .input-group {
@@ -289,9 +305,15 @@
             transition: all 0.3s;
         }
 
-        .record-card:hover {
-            transform: translateX(5px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        @media (hover: hover) {
+            .record-card:hover {
+                transform: translateX(5px);
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            }
+        }
+
+        .record-card:active {
+            background: #f0f2ff;
         }
 
         .record-header {
@@ -312,7 +334,8 @@
         }
 
         .action-button {
-            padding: 5px 10px;
+            padding: 8px 14px;
+            min-height: 44px;
             border: none;
             background: white;
             border-radius: 5px;
@@ -386,6 +409,44 @@
             opacity: 0;
             transition: opacity 0.3s;
         }
+        .export-button {
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.3);
+            color: white;
+            border: 2px solid white;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        .export-button:hover {
+            background: rgba(255,255,255,0.5);
+        }
+
+        .export-button:active {
+            background: rgba(255,255,255,0.6);
+        }
+
+        @media (max-width: 480px) {
+            .app-header {
+                padding: 20px 15px;
+            }
+
+            .app-header h1 {
+                font-size: 1.6rem;
+            }
+
+            .app-header > div:first-child {
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+
+            .tab-content {
+                padding: 16px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -394,14 +455,30 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
+        // 로컬 시간 기준 datetime-local 값 반환
+        const getLocalDatetimeString = () => {
+            const now = new Date();
+            return new Date(now - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+        };
+
         // 데이터 스토리지
         const Storage = {
             save(records) {
-                localStorage.setItem('emotionRecords', JSON.stringify(records));
+                try {
+                    localStorage.setItem('emotionRecords', JSON.stringify(records));
+                } catch (e) {
+                    console.error('저장 실패:', e);
+                    alert('저장 공간이 부족합니다. 오래된 기록을 삭제해주세요.');
+                }
             },
             load() {
-                const data = localStorage.getItem('emotionRecords');
-                return data ? JSON.parse(data) : [];
+                try {
+                    const data = localStorage.getItem('emotionRecords');
+                    return data ? JSON.parse(data) : [];
+                } catch (e) {
+                    console.error('데이터 로딩 실패:', e);
+                    return [];
+                }
             }
         };
 
@@ -440,12 +517,22 @@
         // 감정 기록 폼 컴포넌트
         function EmotionRecordForm({ onSave }) {
             const [selectedEmotions, setSelectedEmotions] = useState([]);
-            const [customEmotions, setCustomEmotions] = useState([]);
+            const [customEmotions, setCustomEmotions] = useState(() => {
+                try {
+                    const saved = localStorage.getItem('customEmotions');
+                    return saved ? JSON.parse(saved) : [];
+                } catch { return []; }
+            });
             const [emotionIntensities, setEmotionIntensities] = useState({});
             const [bodySensations, setBodySensations] = useState([]);
-            const [timestamp, setTimestamp] = useState(new Date().toISOString().slice(0, 16));
+            const [timestamp, setTimestamp] = useState(getLocalDatetimeString());
             const [locationValue, setLocationValue] = useState('집');
             const [customCategories, setCustomCategories] = useState({});
+            const [sensationModal, setSensationModal] = useState(null);
+            const [sensationModalType, setSensationModalType] = useState('');
+            const [sensationModalDesc, setSensationModalDesc] = useState('');
+            const [saveError, setSaveError] = useState('');
+            const [memo, setMemo] = useState('');
 
             const allEmotions = [...predefinedEmotions, ...customEmotions];
 
@@ -463,8 +550,10 @@
 
             const addCustomEmotion = () => {
                 const emotion = prompt('새로운 감정을 입력하세요:');
-                if (emotion && !allEmotions.includes(emotion)) {
-                    setCustomEmotions([...customEmotions, emotion]);
+                if (emotion && emotion.trim() && !allEmotions.includes(emotion.trim())) {
+                    const updated = [...customEmotions, emotion.trim()];
+                    setCustomEmotions(updated);
+                    try { localStorage.setItem('customEmotions', JSON.stringify(updated)); } catch(e) {}
                 }
             };
 
@@ -472,22 +561,32 @@
                 setBodySensations(bodySensations.filter((_, i) => i !== index));
             };
 
+            const bodyBtnClass = (part) =>
+                `body-part-button${bodySensations.some(s => s.area === part) ? ' has-sensation' : ''}`;
+
             // 부위 클릭 핸들러
             const handlePartClick = (partName) => {
-                const type = prompt(`${partName}\n감각 타입을 선택하세요:\n` + sensationTypes.join(', '));
-                if (!type) return;
+                setSensationModal({ partName });
+                setSensationModalType('');
+                setSensationModalDesc('');
+            };
 
-                const description = prompt('구체적인 설명을 입력하세요:');
-
+            const handleSensationConfirm = () => {
+                if (!sensationModalType) return;
                 setBodySensations([...bodySensations, {
-                    area: partName,
-                    specificLocation: partName,
-                    sensationType: type,
-                    description: description || ''
+                    area: sensationModal.partName,
+                    sensationType: sensationModalType,
+                    description: sensationModalDesc
                 }]);
+                setSensationModal(null);
             };
 
             const handleSave = () => {
+                if (selectedEmotions.length === 0) {
+                    setSaveError('감정을 최소 하나 선택해 주세요.');
+                    return;
+                }
+                setSaveError('');
                 const record = {
                     id: Date.now().toString(),
                     timestamp: new Date(timestamp).toISOString(),
@@ -500,7 +599,8 @@
                         intensity: emotionIntensities[name]
                     })),
                     bodySensations,
-                    customCategories
+                    customCategories,
+                    memo
                 };
 
                 onSave(record);
@@ -509,9 +609,11 @@
                 setSelectedEmotions([]);
                 setEmotionIntensities({});
                 setBodySensations([]);
-                setTimestamp(new Date().toISOString().slice(0, 16));
+                setTimestamp(getLocalDatetimeString());
+                setMemo('');
                 setLocationValue('집');
                 setCustomCategories({});
+                setSensationModal(null);
             };
 
             return (
@@ -524,6 +626,10 @@
                                     key={emotion}
                                     className={`emotion-chip ${selectedEmotions.includes(emotion) ? 'selected' : ''}`}
                                     onClick={() => toggleEmotion(emotion)}
+                                    style={selectedEmotions.includes(emotion)
+                                        ? { background: emotionColors[emotion] || '#667eea', borderColor: emotionColors[emotion] || '#667eea', color: 'white' }
+                                        : { borderColor: emotionColors[emotion] || '#667eea', color: emotionColors[emotion] || '#667eea' }
+                                    }
                                 >
                                     {emotion}
                                 </div>
@@ -557,7 +663,7 @@
                             <div style={{
                                 display: 'grid',
                                 gridTemplateColumns: 'repeat(3, 70px)',
-                                gridTemplateRows: 'repeat(13, 35px)',
+                                gridTemplateRows: 'repeat(13, 44px)',
                                 gap: '6px',
                                 alignItems: 'center',
                                 justifyItems: 'center',
@@ -567,33 +673,33 @@
                             }}>
                                 {/* Row 1: Head */}
                                 <div></div>
-                                <button onClick={() => handlePartClick('머리')} className="body-part-button">머리</button>
+                                <button onClick={() => handlePartClick('머리')} className={bodyBtnClass('머리')}>머리</button>
                                 <div></div>
 
                                 {/* Row 2: Neck */}
                                 <div></div>
-                                <button onClick={() => handlePartClick('목')} className="body-part-button">목</button>
+                                <button onClick={() => handlePartClick('목')} className={bodyBtnClass('목')}>목</button>
                                 <div></div>
 
                                 {/* Row 3: Shoulders */}
-                                <button onClick={() => handlePartClick('왼어깨')} className="body-part-button">왼어깨</button>
+                                <button onClick={() => handlePartClick('왼어깨')} className={bodyBtnClass('왼어깨')}>왼어깨</button>
                                 <div></div>
-                                <button onClick={() => handlePartClick('오른어깨')} className="body-part-button">오른어깨</button>
+                                <button onClick={() => handlePartClick('오른어깨')} className={bodyBtnClass('오른어깨')}>오른어깨</button>
 
                                 {/* Row 4-5: Upper arms and chest (2 rows) */}
-                                <button onClick={() => handlePartClick('왼팔뚝')} className="body-part-button">왼팔뚝</button>
-                                <button onClick={() => handlePartClick('가슴')} className="body-part-button" style={{ gridRow: 'span 2', height: '74px' }}>가슴</button>
-                                <button onClick={() => handlePartClick('오른팔뚝')} className="body-part-button">오른팔뚝</button>
+                                <button onClick={() => handlePartClick('왼팔뚝')} className={bodyBtnClass('왼팔뚝')}>왼팔뚝</button>
+                                <button onClick={() => handlePartClick('가슴')} className={bodyBtnClass('가슴')} style={{ gridRow: 'span 2', height: '94px' }}>가슴</button>
+                                <button onClick={() => handlePartClick('오른팔뚝')} className={bodyBtnClass('오른팔뚝')}>오른팔뚝</button>
 
                                 {/* Row 5: Continue upper arms */}
-                                <button onClick={() => handlePartClick('왼팔목')} className="body-part-button">왼팔목</button>
+                                <button onClick={() => handlePartClick('왼팔목')} className={bodyBtnClass('왼팔목')}>왼팔목</button>
                                 {/* 가슴이 여기 차지 */}
-                                <button onClick={() => handlePartClick('오른팔목')} className="body-part-button">오른팔목</button>
+                                <button onClick={() => handlePartClick('오른팔목')} className={bodyBtnClass('오른팔목')}>오른팔목</button>
 
                                 {/* Row 6-7: Forearms and belly (2 rows) */}
-                                <button onClick={() => handlePartClick('왼손')} className="body-part-button">왼손</button>
-                                <button onClick={() => handlePartClick('배')} className="body-part-button" style={{ gridRow: 'span 2', height: '74px' }}>배</button>
-                                <button onClick={() => handlePartClick('오른손')} className="body-part-button">오른손</button>
+                                <button onClick={() => handlePartClick('왼손')} className={bodyBtnClass('왼손')}>왼손</button>
+                                <button onClick={() => handlePartClick('배')} className={bodyBtnClass('배')} style={{ gridRow: 'span 2', height: '94px' }}>배</button>
+                                <button onClick={() => handlePartClick('오른손')} className={bodyBtnClass('오른손')}>오른손</button>
 
                                 {/* Row 7: Continue forearms */}
                                 <div></div>
@@ -602,13 +708,13 @@
 
                                 {/* Row 8: Hips */}
                                 <div></div>
-                                <button onClick={() => handlePartClick('골반')} className="body-part-button">골반</button>
+                                <button onClick={() => handlePartClick('골반')} className={bodyBtnClass('골반')}>골반</button>
                                 <div></div>
 
                                 {/* Row 9-10: Upper legs (separated) */}
-                                <button onClick={() => handlePartClick('왼허벅지')} className="body-part-button" style={{ gridRow: 'span 2', height: '74px' }}>왼허벅지</button>
+                                <button onClick={() => handlePartClick('왼허벅지')} className={bodyBtnClass('왼허벅지')} style={{ gridRow: 'span 2', height: '94px' }}>왼허벅지</button>
                                 <div></div>
-                                <button onClick={() => handlePartClick('오른허벅지')} className="body-part-button" style={{ gridRow: 'span 2', height: '74px' }}>오른허벅지</button>
+                                <button onClick={() => handlePartClick('오른허벅지')} className={bodyBtnClass('오른허벅지')} style={{ gridRow: 'span 2', height: '94px' }}>오른허벅지</button>
 
                                 {/* Row 10: Continue upper legs */}
                                 {/* 왼허벅지가 여기 차지 */}
@@ -616,9 +722,9 @@
                                 {/* 오른허벅지가 여기 차지 */}
 
                                 {/* Row 11-12: Lower legs (separated) */}
-                                <button onClick={() => handlePartClick('왼종아리')} className="body-part-button" style={{ gridRow: 'span 2', height: '74px' }}>왼종아리</button>
+                                <button onClick={() => handlePartClick('왼종아리')} className={bodyBtnClass('왼종아리')} style={{ gridRow: 'span 2', height: '94px' }}>왼종아리</button>
                                 <div></div>
-                                <button onClick={() => handlePartClick('오른종아리')} className="body-part-button" style={{ gridRow: 'span 2', height: '74px' }}>오른종아리</button>
+                                <button onClick={() => handlePartClick('오른종아리')} className={bodyBtnClass('오른종아리')} style={{ gridRow: 'span 2', height: '94px' }}>오른종아리</button>
 
                                 {/* Row 12: Continue lower legs */}
                                 {/* 왼종아리가 여기 차지 */}
@@ -626,9 +732,9 @@
                                 {/* 오른종아리가 여기 차지 */}
 
                                 {/* Row 13: Feet */}
-                                <button onClick={() => handlePartClick('왼발')} className="body-part-button">왼발</button>
+                                <button onClick={() => handlePartClick('왼발')} className={bodyBtnClass('왼발')}>왼발</button>
                                 <div></div>
-                                <button onClick={() => handlePartClick('오른발')} className="body-part-button">오른발</button>
+                                <button onClick={() => handlePartClick('오른발')} className={bodyBtnClass('오른발')}>오른발</button>
                             </div>
                             <div className="sensation-list">
                                 <h4>기록된 감각</h4>
@@ -642,8 +748,9 @@
                                             onClick={() => removeSensation(index)}
                                             style={{
                                                 marginTop: '5px',
-                                                padding: '5px 10px',
-                                                fontSize: '0.8rem',
+                                                padding: '8px 14px',
+                                                minHeight: '44px',
+                                                fontSize: '0.9rem',
                                                 background: '#dc3545',
                                                 color: 'white',
                                                 border: 'none',
@@ -657,6 +764,82 @@
                                 ))}
                             </div>
                         </div>
+                        {sensationModal && (
+                            <div style={{
+                                marginTop: '15px',
+                                padding: '15px',
+                                background: '#f0f2ff',
+                                border: '2px solid #667eea',
+                                borderRadius: '12px'
+                            }}>
+                                <div style={{ fontWeight: '700', marginBottom: '10px', color: '#4a5fc1' }}>
+                                    {sensationModal.partName} - 감각 입력
+                                </div>
+                                <div style={{ marginBottom: '10px' }}>
+                                    <div style={{ fontSize: '0.85rem', marginBottom: '6px', color: '#495057' }}>감각 타입 선택:</div>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                        {sensationTypes.map(type => (
+                                            <button
+                                                key={type}
+                                                onClick={() => setSensationModalType(type)}
+                                                style={{
+                                                    padding: '10px 16px',
+                                                    minHeight: '44px',
+                                                    border: '2px solid #667eea',
+                                                    borderRadius: '20px',
+                                                    background: sensationModalType === type ? '#667eea' : 'white',
+                                                    color: sensationModalType === type ? 'white' : '#667eea',
+                                                    cursor: 'pointer',
+                                                    fontSize: '0.9rem',
+                                                    fontWeight: '600'
+                                                }}
+                                            >{type}</button>
+                                        ))}
+                                    </div>
+                                </div>
+                                <input
+                                    placeholder="설명 (선택)"
+                                    value={sensationModalDesc}
+                                    onChange={e => setSensationModalDesc(e.target.value)}
+                                    style={{
+                                        width: '100%',
+                                        padding: '8px 12px',
+                                        border: '1px solid #ced4da',
+                                        borderRadius: '8px',
+                                        marginBottom: '10px',
+                                        fontSize: '0.9rem'
+                                    }}
+                                />
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    <button
+                                        onClick={handleSensationConfirm}
+                                        disabled={!sensationModalType}
+                                        style={{
+                                            padding: '12px 24px',
+                                            minHeight: '44px',
+                                            background: sensationModalType ? '#667eea' : '#adb5bd',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '8px',
+                                            cursor: sensationModalType ? 'pointer' : 'default',
+                                            fontWeight: '600'
+                                        }}
+                                    >추가</button>
+                                    <button
+                                        onClick={() => setSensationModal(null)}
+                                        style={{
+                                            padding: '12px 24px',
+                                            minHeight: '44px',
+                                            background: 'white',
+                                            color: '#6c757d',
+                                            border: '1px solid #ced4da',
+                                            borderRadius: '8px',
+                                            cursor: 'pointer'
+                                        }}
+                                    >취소</button>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     <div className="form-section">
@@ -728,6 +911,30 @@
                         </button>
                     </div>
 
+                    <div className="form-section">
+                        <h3>메모 (선택)</h3>
+                        <textarea
+                            placeholder="이 감정에 대해 자유롭게 기록하세요..."
+                            value={memo}
+                            onChange={(e) => setMemo(e.target.value)}
+                            style={{
+                                width: '100%',
+                                minHeight: '80px',
+                                padding: '10px 14px',
+                                border: '1px solid #ced4da',
+                                borderRadius: '10px',
+                                fontSize: '0.95rem',
+                                resize: 'vertical',
+                                fontFamily: 'inherit'
+                            }}
+                        />
+                    </div>
+
+                    {saveError && (
+                        <div style={{ color: '#dc3545', textAlign: 'center', marginBottom: '10px', fontWeight: '600' }}>
+                            {saveError}
+                        </div>
+                    )}
                     <button className="save-button" onClick={handleSave}>
                         저장하기
                     </button>
@@ -736,18 +943,37 @@
         }
 
         // 기록 목록 컴포넌트 (필터링 및 검색 기능 포함)
-        function RecordsList({ records, onDelete }) {
+        function RecordsList({ records, onDelete, onGoToRecord }) {
             const [filterEmotion, setFilterEmotion] = useState('all');
             const [filterLocation, setFilterLocation] = useState('all');
             const [filterBody, setFilterBody] = useState('all');
             const [searchText, setSearchText] = useState('');
             const [dateFrom, setDateFrom] = useState('');
             const [dateTo, setDateTo] = useState('');
+            const [sortOrder, setSortOrder] = useState('newest');
 
             if (records.length === 0) {
-                return <div style={{ textAlign: 'center', color: '#6c757d', padding: '50px' }}>
-                    아직 기록이 없습니다. 감정을 기록해보세요!
-                </div>;
+                return (
+                    <div style={{ textAlign: 'center', color: '#6c757d', padding: '50px' }}>
+                        <div style={{ fontSize: '3rem', marginBottom: '15px' }}>📝</div>
+                        <div style={{ fontSize: '1.1rem', marginBottom: '20px' }}>아직 기록이 없습니다.</div>
+                        <button
+                            onClick={onGoToRecord}
+                            style={{
+                                padding: '12px 28px',
+                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '25px',
+                                cursor: 'pointer',
+                                fontSize: '1rem',
+                                fontWeight: '600'
+                            }}
+                        >
+                            지금 기록하기
+                        </button>
+                    </div>
+                );
             }
 
             // 모든 고유 값 추출
@@ -796,13 +1022,19 @@
                             key.toLowerCase().includes(searchLower) ||
                             (value && value.toString().toLowerCase().includes(searchLower))
                         );
+                    const matchesMemo = record.memo && record.memo.toLowerCase().includes(searchLower);
 
-                    if (!matchesEmotion && !matchesLocation && !matchesBody && !matchesCustom) {
+                    if (!matchesEmotion && !matchesLocation && !matchesBody && !matchesCustom && !matchesMemo) {
                         return false;
                     }
                 }
 
                 return true;
+            });
+
+            const sortedRecords = [...filteredRecords].sort((a, b) => {
+                const tA = new Date(a.timestamp), tB = new Date(b.timestamp);
+                return sortOrder === 'newest' ? tB - tA : tA - tB;
             });
 
             return (
@@ -898,19 +1130,35 @@
                             필터 초기화
                         </button>
 
-                        <div style={{ marginTop: '10px', color: '#6c757d', fontSize: '0.9rem' }}>
-                            {filteredRecords.length}개 / {records.length}개 기록
+                        <div style={{ marginTop: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ color: '#6c757d', fontSize: '0.9rem' }}>
+                                {filteredRecords.length}개 / {records.length}개 기록
+                            </span>
+                            <button
+                                onClick={() => setSortOrder(sortOrder === 'newest' ? 'oldest' : 'newest')}
+                                style={{
+                                    padding: '5px 12px',
+                                    background: 'white',
+                                    border: '1px solid #ced4da',
+                                    borderRadius: '8px',
+                                    cursor: 'pointer',
+                                    fontSize: '0.85rem',
+                                    color: '#495057'
+                                }}
+                            >
+                                {sortOrder === 'newest' ? '최신순 ↓' : '오래된순 ↑'}
+                            </button>
                         </div>
                     </div>
 
                     {/* 기록 목록 */}
-                    {filteredRecords.length === 0 ? (
+                    {sortedRecords.length === 0 ? (
                         <div style={{ textAlign: 'center', color: '#6c757d', padding: '50px' }}>
                             필터 조건에 맞는 기록이 없습니다.
                         </div>
                     ) : (
                         <div className="records-list">
-                            {filteredRecords.map(record => (
+                            {sortedRecords.map(record => (
                                 <div key={record.id} className="record-card">
                                     <div className="record-header">
                                         <div className="record-time">
@@ -938,7 +1186,12 @@
                                     </div>
                                     {record.bodySensations.length > 0 && (
                                         <div style={{ marginTop: '10px', color: '#6c757d' }}>
-                                            🫀 {record.bodySensations.map(s => s.area).join(', ')}
+                                            🫀 {record.bodySensations.map(s => `${s.area}(${s.sensationType})`).join(', ')}
+                                        </div>
+                                    )}
+                                    {record.memo && (
+                                        <div style={{ marginTop: '10px', color: '#495057', background: '#f8f9fa', padding: '8px 12px', borderRadius: '8px', fontSize: '0.9rem' }}>
+                                            📝 {record.memo}
                                         </div>
                                     )}
                                     {record.customCategories && Object.keys(record.customCategories).length > 0 && (
@@ -1291,6 +1544,7 @@
                     .attr('font-weight', 'bold')
                     .text('신체 부위별 감각 히트맵');
 
+                return () => d3.selectAll('.tooltip').remove();
             }, [records]);
 
             return (
@@ -1339,12 +1593,12 @@
                         break;
                     case 'month':
                         startTime = new Date(now.getFullYear(), now.getMonth(), 1);
-                        endTime = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                        endTime = new Date(now.getFullYear(), now.getMonth() + 1, 1);
                         cycleMs = endTime.getTime() - startTime.getTime();
                         break;
                     case 'year':
                         startTime = new Date(now.getFullYear(), 0, 1);
-                        endTime = new Date(now.getFullYear(), 11, 31);
+                        endTime = new Date(now.getFullYear() + 1, 0, 1);
                         cycleMs = endTime.getTime() - startTime.getTime();
                         break;
                 }
@@ -1473,6 +1727,7 @@
                         timeScale === 'month' ? '한 달' : '일 년'
                     })`);
 
+                return () => d3.selectAll('.tooltip').remove();
             }, [records, timeScale]);
 
             return (
@@ -1509,8 +1764,32 @@
         }
 
         // 시각화 탭 컴포넌트 (하위 탭 포함)
-        function VisualizationTabs({ records }) {
+        function VisualizationTabs({ records, onGoToRecord }) {
             const [vizType, setVizType] = useState('time');
+
+            if (records.length === 0) {
+                return (
+                    <div style={{ textAlign: 'center', color: '#6c757d', padding: '50px' }}>
+                        <div style={{ fontSize: '3rem', marginBottom: '15px' }}>📊</div>
+                        <div style={{ fontSize: '1.1rem', marginBottom: '20px' }}>기록이 있어야 시각화를 볼 수 있습니다.</div>
+                        <button
+                            onClick={onGoToRecord}
+                            style={{
+                                padding: '12px 28px',
+                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '25px',
+                                cursor: 'pointer',
+                                fontSize: '1rem',
+                                fontWeight: '600'
+                            }}
+                        >
+                            지금 기록하기
+                        </button>
+                    </div>
+                );
+            }
 
             return (
                 <div>
@@ -1543,6 +1822,30 @@
         }
 
         // 데이터 내보내기 함수
+        function importFromJSON(onImport) {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    try {
+                        const imported = JSON.parse(ev.target.result);
+                        if (!Array.isArray(imported)) throw new Error('올바른 형식이 아닙니다');
+                        if (confirm(`${imported.length}개의 기록을 가져옵니다. 기존 기록에 추가됩니다.`)) {
+                            onImport(imported);
+                        }
+                    } catch(e) {
+                        alert('파일을 읽을 수 없습니다. 올바른 JSON 형식인지 확인하세요.');
+                    }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        }
+
         function exportToJSON(records) {
             const dataStr = JSON.stringify(records, null, 2);
             const dataBlob = new Blob([dataStr], { type: 'application/json' });
@@ -1595,6 +1898,14 @@
             const [activeTab, setActiveTab] = useState('record');
             const [records, setRecords] = useState([]);
             const [hiddenModesDetected, setHiddenModesDetected] = useState(new Set());
+            const [toast, setToast] = useState('');
+            const toastTimerRef = useRef(null);
+
+            const showToast = (msg) => {
+                if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+                setToast(msg);
+                toastTimerRef.current = setTimeout(() => setToast(''), 2500);
+            };
 
             useEffect(() => {
                 const loaded = Storage.load();
@@ -1608,6 +1919,7 @@
                 Storage.save(newRecords);
                 setHiddenModesDetected(detectHiddenCategories(newRecords));
                 setActiveTab('list');
+                showToast('기록이 저장되었습니다!');
             };
 
             const handleDeleteRecord = (id) => {
@@ -1619,51 +1931,35 @@
                 }
             };
 
+            const handleImportRecords = (imported) => {
+                const merged = [...records, ...imported.filter(imp => !records.some(r => r.id === imp.id))];
+                setRecords(merged);
+                Storage.save(merged);
+                setHiddenModesDetected(detectHiddenCategories(merged));
+                showToast(`${imported.length}개 기록을 가져왔습니다!`);
+            };
+
             return (
+                <React.Fragment>
                 <div className="app-container">
                     <div className="app-header">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                            <h1 style={{ margin: 0 }}>Emoscape v1.0</h1>
-                            {records.length > 0 && (
-                                <div style={{ display: 'flex', gap: '10px' }}>
-                                    <button
-                                        onClick={() => exportToJSON(records)}
-                                        style={{
-                                            padding: '10px 20px',
-                                            background: 'rgba(255,255,255,0.3)',
-                                            color: 'white',
-                                            border: '2px solid white',
-                                            borderRadius: '10px',
-                                            cursor: 'pointer',
-                                            fontSize: '0.9rem',
-                                            fontWeight: '600',
-                                            transition: 'all 0.3s'
-                                        }}
-                                        onMouseOver={(e) => e.target.style.background = 'rgba(255,255,255,0.5)'}
-                                        onMouseOut={(e) => e.target.style.background = 'rgba(255,255,255,0.3)'}
-                                    >
-                                        JSON 내보내기
-                                    </button>
-                                    <button
-                                        onClick={() => exportToCSV(records)}
-                                        style={{
-                                            padding: '10px 20px',
-                                            background: 'rgba(255,255,255,0.3)',
-                                            color: 'white',
-                                            border: '2px solid white',
-                                            borderRadius: '10px',
-                                            cursor: 'pointer',
-                                            fontSize: '0.9rem',
-                                            fontWeight: '600',
-                                            transition: 'all 0.3s'
-                                        }}
-                                        onMouseOver={(e) => e.target.style.background = 'rgba(255,255,255,0.5)'}
-                                        onMouseOut={(e) => e.target.style.background = 'rgba(255,255,255,0.3)'}
-                                    >
-                                        CSV 내보내기
-                                    </button>
-                                </div>
-                            )}
+                            <h1 style={{ margin: 0 }}>Emoscape v1.1</h1>
+                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                <button className="export-button" onClick={() => importFromJSON(handleImportRecords)}>
+                                    JSON 가져오기
+                                </button>
+                                {records.length > 0 && (
+                                    <React.Fragment>
+                                        <button className="export-button" onClick={() => exportToJSON(records)}>
+                                            JSON 내보내기
+                                        </button>
+                                        <button className="export-button" onClick={() => exportToCSV(records)}>
+                                            CSV 내보내기
+                                        </button>
+                                    </React.Fragment>
+                                )}
+                            </div>
                         </div>
                         <p>감정을 시간, 장소, 신체와 함께 기록하고 시각화하세요</p>
                         {hiddenModesDetected.size > 0 && (
@@ -1702,10 +1998,29 @@
 
                     <div className="tab-content">
                         {activeTab === 'record' && <EmotionRecordForm onSave={handleSaveRecord} />}
-                        {activeTab === 'list' && <RecordsList records={records} onDelete={handleDeleteRecord} />}
-                        {activeTab === 'visualize' && <VisualizationTabs records={records} />}
+                        {activeTab === 'list' && <RecordsList records={records} onDelete={handleDeleteRecord} onGoToRecord={() => setActiveTab('record')} />}
+                        {activeTab === 'visualize' && <VisualizationTabs records={records} onGoToRecord={() => setActiveTab('record')} />}
                     </div>
                 </div>
+                {toast && (
+                    <div style={{
+                        position: 'fixed',
+                        bottom: '30px',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        background: '#28a745',
+                        color: 'white',
+                        padding: '12px 28px',
+                        borderRadius: '25px',
+                        zIndex: 9999,
+                        fontSize: '1rem',
+                        fontWeight: '600',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+                    }}>
+                        {toast}
+                    </div>
+                )}
+                </React.Fragment>
             );
         }
 
