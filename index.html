@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Emoscape v1.1 - 감정 기록 앱</title>
+    <title>Emoscape v1.2 - 감정 기록 앱</title>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -21,8 +21,16 @@
                 sans-serif;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #a21caf 100%);
+            background-size: 300% 300%;
+            animation: bgShift 12s ease infinite;
             min-height: 100vh;
+        }
+
+        @keyframes bgShift {
+            0%   { background-position: 0% 50%; }
+            50%  { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
 
         #root {
@@ -39,48 +47,71 @@
         }
 
         .app-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 60%, #a21caf 100%);
             color: white;
-            padding: 30px;
+            padding: 28px 30px 24px;
             text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .app-header::before {
+            content: '';
+            position: absolute;
+            top: -40px; right: -40px;
+            width: 160px; height: 160px;
+            background: rgba(255,255,255,0.07);
+            border-radius: 50%;
+        }
+
+        .app-header::after {
+            content: '';
+            position: absolute;
+            bottom: -30px; left: -30px;
+            width: 120px; height: 120px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 50%;
         }
 
         .app-header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
+            font-size: 2.2rem;
+            margin-bottom: 6px;
+            letter-spacing: -0.5px;
         }
 
         .app-header p {
-            opacity: 0.9;
-            font-size: 1.1rem;
+            opacity: 0.85;
+            font-size: 1rem;
         }
 
         .tab-navigation {
             display: flex;
-            background: #f8f9fa;
-            border-bottom: 2px solid #e9ecef;
+            background: #f5f3ff;
+            border-bottom: 2px solid #e5e1fb;
         }
 
         .tab-button {
             flex: 1;
-            padding: 20px;
+            padding: 18px 12px;
             border: none;
             background: transparent;
             cursor: pointer;
-            font-size: 1rem;
+            font-size: 0.95rem;
             font-weight: 600;
-            color: #6c757d;
-            transition: all 0.3s;
+            color: #9591b0;
+            transition: all 0.25s;
             border-bottom: 3px solid transparent;
+            letter-spacing: 0.2px;
         }
 
         .tab-button:hover {
-            background: #e9ecef;
+            background: #ede9fe;
+            color: #6d28d9;
         }
 
         .tab-button.active {
-            color: #667eea;
-            border-bottom-color: #667eea;
+            color: #6d28d9;
+            border-bottom-color: #7c3aed;
             background: white;
         }
 
@@ -101,8 +132,22 @@
 
         .form-section h3 {
             margin-bottom: 15px;
-            color: #333;
-            font-size: 1.3rem;
+            color: #3b0764;
+            font-size: 1.15rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-section h3::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 1.1em;
+            background: linear-gradient(180deg, #7c3aed, #a21caf);
+            border-radius: 2px;
+            flex-shrink: 0;
         }
 
         .emotion-grid {
@@ -113,25 +158,27 @@
         }
 
         .emotion-chip {
-            padding: 12px 20px;
-            border: 2px solid #dee2e6;
-            border-radius: 25px;
+            padding: 10px 18px;
+            border: 2px solid #e5e7eb;
+            border-radius: 20px;
             background: white;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.22s cubic-bezier(0.34,1.56,0.64,1);
             text-align: center;
-            font-weight: 500;
+            font-weight: 600;
+            font-size: 0.95rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
 
         .emotion-chip:hover {
-            border-color: #667eea;
-            transform: translateY(-2px);
+            transform: translateY(-3px) scale(1.04);
+            box-shadow: 0 6px 16px rgba(124,58,237,0.18);
         }
 
         .emotion-chip.selected {
-            background: #667eea;
             color: white;
-            border-color: #667eea;
+            transform: translateY(-2px) scale(1.04);
+            box-shadow: 0 6px 18px rgba(124,58,237,0.35);
         }
 
         .add-custom-button {
@@ -162,20 +209,24 @@
 
         .intensity-slider input[type="range"] {
             width: 100%;
-            height: 8px;
+            height: 6px;
             border-radius: 5px;
-            background: #e9ecef;
+            background: linear-gradient(90deg, #7c3aed, #a21caf);
             outline: none;
+            -webkit-appearance: none;
+            appearance: none;
         }
 
         .intensity-slider input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
-            width: 20px;
-            height: 20px;
+            width: 22px;
+            height: 22px;
             border-radius: 50%;
-            background: #667eea;
+            background: white;
+            border: 3px solid #7c3aed;
             cursor: pointer;
+            box-shadow: 0 2px 8px rgba(124,58,237,0.4);
         }
 
         .intensity-value {
@@ -256,109 +307,125 @@
         .input-group select,
         .input-group textarea {
             width: 100%;
-            padding: 10px 15px;
-            border: 2px solid #dee2e6;
+            padding: 10px 14px;
+            border: 2px solid #e5e7eb;
             border-radius: 10px;
             font-size: 1rem;
-            transition: border-color 0.3s;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            background: #fafafa;
         }
 
         .input-group input:focus,
         .input-group select:focus,
         .input-group textarea:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #7c3aed;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(124,58,237,0.1);
         }
 
         .save-button {
             width: 100%;
-            padding: 15px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 16px;
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #a21caf 100%);
+            background-size: 200% auto;
             color: white;
             border: none;
-            border-radius: 10px;
-            font-size: 1.1rem;
-            font-weight: 600;
+            border-radius: 14px;
+            font-size: 1.05rem;
+            font-weight: 700;
             cursor: pointer;
-            transition: transform 0.3s;
+            transition: all 0.3s;
+            letter-spacing: 0.3px;
+            box-shadow: 0 4px 16px rgba(124,58,237,0.35);
         }
 
         .save-button:hover {
+            background-position: right center;
             transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(124,58,237,0.45);
         }
 
         .save-button:active {
             transform: translateY(0);
+            box-shadow: 0 2px 8px rgba(124,58,237,0.3);
         }
 
         /* 기록 목록 */
         .records-list {
             display: grid;
-            gap: 20px;
+            gap: 16px;
         }
 
         .record-card {
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 15px;
-            border-left: 5px solid #667eea;
-            transition: all 0.3s;
+            padding: 18px 20px;
+            background: white;
+            border-radius: 16px;
+            border-left: 5px solid #7c3aed;
+            transition: all 0.25s;
+            box-shadow: 0 2px 8px rgba(124,58,237,0.07);
         }
 
         @media (hover: hover) {
             .record-card:hover {
-                transform: translateX(5px);
-                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+                transform: translateX(4px);
+                box-shadow: 0 8px 24px rgba(124,58,237,0.15);
             }
         }
 
         .record-card:active {
-            background: #f0f2ff;
+            background: #faf5ff;
         }
 
         .record-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
         }
 
         .record-time {
-            font-weight: 600;
-            color: #667eea;
+            font-weight: 700;
+            color: #6d28d9;
+            font-size: 0.92rem;
         }
 
         .record-actions {
             display: flex;
-            gap: 10px;
+            gap: 8px;
         }
 
         .action-button {
-            padding: 8px 14px;
-            min-height: 44px;
-            border: none;
+            padding: 6px 14px;
+            min-height: 36px;
+            border: 1px solid #e5e7eb;
             background: white;
-            border-radius: 5px;
+            border-radius: 8px;
             cursor: pointer;
-            transition: background 0.3s;
+            transition: all 0.2s;
+            font-size: 0.85rem;
+            color: #6b7280;
         }
 
         .action-button:hover {
-            background: #dee2e6;
+            background: #fef2f2;
+            border-color: #fca5a5;
+            color: #dc2626;
         }
 
         .record-emotions {
             display: flex;
             flex-wrap: wrap;
-            gap: 8px;
+            gap: 6px;
             margin-bottom: 10px;
         }
 
         .emotion-tag {
-            padding: 5px 12px;
-            background: white;
-            border-radius: 15px;
-            font-size: 0.9rem;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            opacity: 0.9;
         }
 
         /* 시각화 */
@@ -458,23 +525,25 @@
             transition: opacity 0.3s;
         }
         .export-button {
-            padding: 10px 20px;
-            background: rgba(255,255,255,0.3);
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.18);
             color: white;
-            border: 2px solid white;
+            border: 1.5px solid rgba(255,255,255,0.6);
             border-radius: 10px;
             cursor: pointer;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             font-weight: 600;
-            transition: background 0.3s;
+            transition: all 0.2s;
+            backdrop-filter: blur(4px);
         }
 
         .export-button:hover {
-            background: rgba(255,255,255,0.5);
+            background: rgba(255,255,255,0.35);
+            border-color: white;
         }
 
         .export-button:active {
-            background: rgba(255,255,255,0.6);
+            background: rgba(255,255,255,0.5);
         }
 
         @media (max-width: 480px) {
@@ -910,11 +979,30 @@
                         <h3>시간 및 장소</h3>
                         <div className="input-group">
                             <label>시간</label>
-                            <input
-                                type="datetime-local"
-                                value={timestamp}
-                                onChange={(e) => setTimestamp(e.target.value)}
-                            />
+                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                <input
+                                    type="datetime-local"
+                                    value={timestamp}
+                                    onChange={(e) => setTimestamp(e.target.value)}
+                                    style={{ flex: 1 }}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setTimestamp(getLocalDatetimeString())}
+                                    style={{
+                                        padding: '10px 14px',
+                                        minHeight: '44px',
+                                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                        color: 'white',
+                                        border: 'none',
+                                        borderRadius: '10px',
+                                        cursor: 'pointer',
+                                        fontWeight: '600',
+                                        fontSize: '0.85rem',
+                                        whiteSpace: 'nowrap'
+                                    }}
+                                >지금</button>
+                            </div>
                         </div>
                         <div className="input-group">
                             <label>장소</label>
@@ -1853,10 +1941,10 @@
 
             return (
                 <div>
-                    <div className="scale-buttons">
+                    <div className="viz-tab-buttons" style={{ marginBottom: '12px' }}>
                         {[['day','하루'],['week','이번 주'],['month','이번 달'],['year','올해']].map(([val, label]) => (
                             <button key={val}
-                                className={`scale-button ${timeScale === val ? 'active' : ''}`}
+                                className={`viz-tab-btn ${timeScale === val ? 'active' : ''}`}
                                 onClick={() => setTimeScale(val)}
                             >{label}</button>
                         ))}
@@ -2176,7 +2264,7 @@
                 <div className="app-container">
                     <div className="app-header">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                            <h1 style={{ margin: 0 }}>Emoscape v1.1</h1>
+                            <h1 style={{ margin: 0 }}>Emoscape v1.2</h1>
                             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                                 <button className="export-button" onClick={() => importFromJSON(handleImportRecords)}>
                                     JSON 가져오기
