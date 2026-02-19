@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Emoscape - 감정 기록 앱</title>
+    <title>Emoscape v1.1 - 감정 기록 앱</title>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -364,7 +364,55 @@
         /* 시각화 */
         .visualization-container {
             width: 100%;
-            height: 600px;
+            height: 420px;
+        }
+
+        .calendar-heatmap-svg {
+            width: 100%;
+            display: block;
+        }
+
+        @keyframes barGrow {
+            from { transform: scaleY(0); transform-origin: bottom; }
+            to { transform: scaleY(1); transform-origin: bottom; }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .viz-tab-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .viz-tab-btn {
+            padding: 10px 18px;
+            min-height: 44px;
+            border: 2px solid #dee2e6;
+            background: white;
+            border-radius: 22px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #6c757d;
+            transition: all 0.25s;
+        }
+
+        .viz-tab-btn:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .viz-tab-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.35);
         }
 
         .scale-buttons {
@@ -395,7 +443,7 @@
 
         #sine-wave-chart {
             width: 100%;
-            height: 500px;
+            height: 420px;
         }
 
         .tooltip {
@@ -445,6 +493,22 @@
 
             .tab-content {
                 padding: 16px;
+            }
+
+            .visualization-container,
+            #sine-wave-chart {
+                height: 300px;
+            }
+
+            .scale-buttons {
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+
+            .scale-button {
+                padding: 8px 14px;
+                min-height: 44px;
+                font-size: 0.85rem;
             }
         }
     </style>
@@ -1241,7 +1305,7 @@
             return detected;
         }
 
-        // 장소 시각화 컴포넌트
+        // 장소별 감정 스택드 바 차트
         function LocationVisualization({ records }) {
             const svgRef = useRef();
 
@@ -1251,99 +1315,122 @@
                 const svg = d3.select(svgRef.current);
                 svg.selectAll('*').remove();
 
-                const width = svgRef.current.clientWidth;
-                const height = svgRef.current.clientHeight;
-                const margin = { top: 40, right: 40, bottom: 60, left: 60 };
-
-                // 장소별 감정 집계
-                const locationData = {};
-                records.forEach(record => {
-                    const loc = record.location.value;
-                    if (!locationData[loc]) {
-                        locationData[loc] = { total: 0, emotions: {} };
-                    }
-                    locationData[loc].total += record.emotions.length;
-                    record.emotions.forEach(emotion => {
-                        locationData[loc].emotions[emotion.name] =
-                            (locationData[loc].emotions[emotion.name] || 0) + 1;
-                    });
-                });
-
-                const data = Object.entries(locationData).map(([location, info]) => ({
-                    location,
-                    count: info.total
-                })).sort((a, b) => b.count - a.count);
-
+                const width = svgRef.current.clientWidth || 600;
+                const height = svgRef.current.clientHeight || 420;
+                const isMobile = width < 500;
+                const margin = { top: 50, right: isMobile ? 15 : 130, bottom: 50, left: isMobile ? 35 : 50 };
                 const innerWidth = width - margin.left - margin.right;
                 const innerHeight = height - margin.top - margin.bottom;
 
-                const g = svg.append('g')
-                    .attr('transform', `translate(${margin.left},${margin.top})`);
+                // 등장하는 모든 감정 이름
+                const allEmotionNames = [...new Set(records.flatMap(r => r.emotions.map(e => e.name)))];
 
-                // X축: 장소
+                // 장소별 감정 카운트
+                const locationMap = {};
+                records.forEach(record => {
+                    const loc = record.location.value;
+                    if (!locationMap[loc]) {
+                        locationMap[loc] = { location: loc };
+                        allEmotionNames.forEach(e => { locationMap[loc][e] = 0; });
+                    }
+                    record.emotions.forEach(e => {
+                        locationMap[loc][e.name] = (locationMap[loc][e.name] || 0) + 1;
+                    });
+                });
+
+                const data = Object.values(locationMap).sort((a, b) => {
+                    const sumA = allEmotionNames.reduce((s, e) => s + (a[e] || 0), 0);
+                    const sumB = allEmotionNames.reduce((s, e) => s + (b[e] || 0), 0);
+                    return sumB - sumA;
+                });
+
+                const activeEmotions = allEmotionNames.filter(e => data.some(d => d[e] > 0));
+                const stack = d3.stack().keys(activeEmotions)(data);
+
+                const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
                 const xScale = d3.scaleBand()
                     .domain(data.map(d => d.location))
-                    .range([0, innerWidth])
-                    .padding(0.2);
+                    .range([0, innerWidth]).padding(0.3);
 
-                // Y축: 개수
-                const yScale = d3.scaleLinear()
-                    .domain([0, d3.max(data, d => d.count)])
-                    .range([innerHeight, 0]);
+                const yMax = d3.max(data, d => activeEmotions.reduce((s, e) => s + (d[e] || 0), 0)) || 1;
+                const yScale = d3.scaleLinear().domain([0, yMax]).range([innerHeight, 0]).nice();
 
-                // 막대 그래프
-                g.selectAll('rect')
-                    .data(data)
-                    .enter()
-                    .append('rect')
-                    .attr('x', d => xScale(d.location))
-                    .attr('y', d => yScale(d.count))
-                    .attr('width', xScale.bandwidth())
-                    .attr('height', d => innerHeight - yScale(d.count))
-                    .attr('fill', '#667eea')
-                    .attr('rx', 5)
-                    .style('cursor', 'pointer')
-                    .on('mouseover', function(event, d) {
-                        d3.select(this).attr('fill', '#764ba2');
-                    })
-                    .on('mouseout', function(event, d) {
-                        d3.select(this).attr('fill', '#667eea');
-                    });
+                // 배경 그리드
+                g.append('g')
+                    .call(d3.axisLeft(yScale).ticks(5).tickSize(-innerWidth).tickFormat(''))
+                    .call(gg => gg.select('.domain').remove())
+                    .call(gg => gg.selectAll('.tick line').attr('stroke', '#f0f2ff').attr('stroke-width', 1));
 
-                // 값 표시
-                g.selectAll('text.value')
-                    .data(data)
-                    .enter()
-                    .append('text')
-                    .attr('class', 'value')
-                    .attr('x', d => xScale(d.location) + xScale.bandwidth() / 2)
-                    .attr('y', d => yScale(d.count) - 5)
-                    .attr('text-anchor', 'middle')
-                    .attr('font-size', '14px')
-                    .attr('font-weight', 'bold')
-                    .attr('fill', '#333')
-                    .text(d => d.count);
+                const tooltip = d3.select('body').selectAll('.loc-tip').data([null]).join('div')
+                    .attr('class', 'tooltip loc-tip')
+                    .style('position', 'absolute').style('opacity', 0).style('pointer-events', 'none');
+
+                // 스택드 바 (진입 애니메이션)
+                stack.forEach(layer => {
+                    const emoName = layer.key;
+                    const color = emotionColors[emoName] || '#667eea';
+
+                    g.selectAll(null)
+                        .data(layer)
+                        .enter()
+                        .append('rect')
+                        .attr('x', d => xScale(d.data.location))
+                        .attr('width', xScale.bandwidth())
+                        .attr('rx', 3)
+                        .attr('fill', color)
+                        .attr('y', innerHeight)
+                        .attr('height', 0)
+                        .on('mouseover', function(event, d) {
+                            d3.select(this).attr('opacity', 0.75);
+                            tooltip.style('opacity', 1)
+                                .html(`<strong>${d.data.location}</strong><br/>${emoName}: ${d[1] - d[0]}회`)
+                                .style('left', (event.pageX + 10) + 'px')
+                                .style('top', (event.pageY - 32) + 'px');
+                        })
+                        .on('mouseout', function() {
+                            d3.select(this).attr('opacity', 1);
+                            tooltip.style('opacity', 0);
+                        })
+                        .on('touchstart', function(event, d) {
+                            event.preventDefault();
+                            tooltip.style('opacity', 1)
+                                .html(`<strong>${d.data.location}</strong><br/>${emoName}: ${d[1] - d[0]}회`)
+                                .style('left', (event.touches[0].pageX + 10) + 'px')
+                                .style('top', (event.touches[0].pageY - 32) + 'px');
+                            setTimeout(() => tooltip.style('opacity', 0), 2000);
+                        })
+                        .transition().duration(700).delay((d, i) => i * 60)
+                        .attr('y', d => yScale(d[1]))
+                        .attr('height', d => Math.max(0, yScale(d[0]) - yScale(d[1])));
+                });
 
                 // X축
-                g.append('g')
-                    .attr('transform', `translate(0,${innerHeight})`)
+                g.append('g').attr('transform', `translate(0,${innerHeight})`)
                     .call(d3.axisBottom(xScale))
-                    .selectAll('text')
-                    .attr('font-size', '12px');
+                    .selectAll('text').attr('font-size', isMobile ? '10px' : '12px');
 
                 // Y축
-                g.append('g')
-                    .call(d3.axisLeft(yScale));
+                g.append('g').call(d3.axisLeft(yScale).ticks(5))
+                    .selectAll('text').attr('font-size', isMobile ? '10px' : '12px');
 
                 // 제목
                 svg.append('text')
-                    .attr('x', width / 2)
-                    .attr('y', 20)
-                    .attr('text-anchor', 'middle')
-                    .attr('font-size', '16px')
-                    .attr('font-weight', 'bold')
-                    .text('장소별 감정 기록 빈도');
+                    .attr('x', width / 2).attr('y', 25)
+                    .attr('text-anchor', 'middle').attr('font-size', '15px').attr('font-weight', 'bold').attr('fill', '#333')
+                    .text('장소별 감정 분포');
 
+                // 범례 (데스크탑: 우측)
+                if (!isMobile) {
+                    const legendG = svg.append('g').attr('transform', `translate(${width - margin.right + 10}, ${margin.top})`);
+                    activeEmotions.forEach((name, i) => {
+                        const color = emotionColors[name] || '#667eea';
+                        legendG.append('rect').attr('x', 0).attr('y', i * 22 - 9).attr('width', 13).attr('height', 13).attr('fill', color).attr('rx', 3);
+                        legendG.append('text').attr('x', 18).attr('y', i * 22).attr('font-size', '11px').attr('fill', '#444').text(name);
+                    });
+                }
+
+                return () => d3.selectAll('.loc-tip').remove();
             }, [records]);
 
             return (
@@ -1554,211 +1641,362 @@
             );
         }
 
-        // 사인파 시각화 컴포넌트
+        // 감정 강도 에리어 차트 (기존 사인파 대체 - Y축 = 실제 감정 강도)
         function SineWaveVisualization({ records }) {
             const svgRef = useRef();
-            const [timeScale, setTimeScale] = useState('day'); // day, week, month, year
+            const [timeScale, setTimeScale] = useState('week');
 
             useEffect(() => {
-                if (!records.length || !svgRef.current) return;
+                if (!svgRef.current) return;
 
                 const svg = d3.select(svgRef.current);
                 svg.selectAll('*').remove();
 
-                const width = svgRef.current.clientWidth;
-                const height = svgRef.current.clientHeight;
-                const margin = { top: 40, right: 40, bottom: 60, left: 60 };
+                const width = svgRef.current.clientWidth || 600;
+                const height = svgRef.current.clientHeight || 420;
+                const isMobile = width < 500;
+                const margin = { top: 50, right: isMobile ? 15 : 40, bottom: isMobile ? 50 : 60, left: isMobile ? 38 : 55 };
                 const innerWidth = width - margin.left - margin.right;
                 const innerHeight = height - margin.top - margin.bottom;
 
-                const g = svg.append('g')
-                    .attr('transform', `translate(${margin.left},${margin.top})`);
+                // 그라데이션 defs
+                const defs = svg.append('defs');
 
                 // 시간 범위 계산
                 const now = new Date();
-                let startTime, endTime, cycleMs;
-
+                let startTime, endTime;
                 switch(timeScale) {
                     case 'day':
                         startTime = new Date(now.getFullYear(), now.getMonth(), now.getDate());
                         endTime = new Date(startTime.getTime() + 24 * 60 * 60 * 1000);
-                        cycleMs = 24 * 60 * 60 * 1000;
                         break;
                     case 'week':
-                        const dayOfWeek = now.getDay();
-                        startTime = new Date(now.getTime() - dayOfWeek * 24 * 60 * 60 * 1000);
+                        const dow = now.getDay();
+                        startTime = new Date(now.getTime() - dow * 24 * 60 * 60 * 1000);
                         startTime.setHours(0, 0, 0, 0);
                         endTime = new Date(startTime.getTime() + 7 * 24 * 60 * 60 * 1000);
-                        cycleMs = 7 * 24 * 60 * 60 * 1000;
                         break;
                     case 'month':
                         startTime = new Date(now.getFullYear(), now.getMonth(), 1);
                         endTime = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-                        cycleMs = endTime.getTime() - startTime.getTime();
                         break;
                     case 'year':
                         startTime = new Date(now.getFullYear(), 0, 1);
                         endTime = new Date(now.getFullYear() + 1, 0, 1);
-                        cycleMs = endTime.getTime() - startTime.getTime();
                         break;
                 }
+                const cycleMs = endTime - startTime;
 
-                // X축: 시간 (0 to 2π)
-                const xScale = d3.scaleLinear()
-                    .domain([0, cycleMs])
-                    .range([0, innerWidth]);
-
-                // Y축: 사인파 값
-                const yScale = d3.scaleLinear()
-                    .domain([-1.5, 1.5])
-                    .range([innerHeight, 0]);
-
-                // 사인파 경로 생성
-                const sineData = d3.range(0, cycleMs, cycleMs / 200).map(t => ({
-                    time: t,
-                    value: Math.sin((t / cycleMs) * 2 * Math.PI)
-                }));
-
-                const line = d3.line()
-                    .x(d => xScale(d.time))
-                    .y(d => yScale(d.value))
-                    .curve(d3.curveNatural);
-
-                // 사인파 그리기
-                g.append('path')
-                    .datum(sineData)
-                    .attr('d', line)
-                    .attr('fill', 'none')
-                    .attr('stroke', '#dee2e6')
-                    .attr('stroke-width', 2);
-
-                // 감정 마커 추가
+                // 해당 기간 기록 필터 + 감정별 그룹화
                 const filteredRecords = records.filter(r => {
-                    const recordTime = new Date(r.timestamp);
-                    return recordTime >= startTime && recordTime < endTime;
+                    const t = new Date(r.timestamp);
+                    return t >= startTime && t < endTime;
                 });
 
-                d3.selectAll('.tooltip').remove();
-                const tooltip = d3.select('body').append('div')
-                    .attr('class', 'tooltip')
-                    .style('position', 'absolute')
-                    .style('opacity', 0);
-
+                const emotionGroups = {};
                 filteredRecords.forEach(record => {
-                    const recordTime = new Date(record.timestamp);
-                    const timeOffset = recordTime.getTime() - startTime.getTime();
-                    const sineValue = Math.sin((timeOffset / cycleMs) * 2 * Math.PI);
-
+                    const timeOffset = new Date(record.timestamp) - startTime;
                     record.emotions.forEach(emotion => {
-                        const color = emotionColors[emotion.name] || '#667eea';
-                        const radius = 3 + emotion.intensity;
-
-                        g.append('circle')
-                            .attr('cx', xScale(timeOffset))
-                            .attr('cy', yScale(sineValue))
-                            .attr('r', radius)
-                            .attr('fill', color)
-                            .attr('stroke', 'white')
-                            .attr('stroke-width', 2)
-                            .style('cursor', 'pointer')
-                            .on('mouseover', function(event) {
-                                d3.select(this).transition().duration(200).attr('r', radius * 1.5);
-                                tooltip.transition().duration(200).style('opacity', 1);
-                                tooltip.html(`
-                                    <strong>${emotion.name}</strong><br/>
-                                    강도: ${emotion.intensity}<br/>
-                                    시간: ${recordTime.toLocaleString('ko-KR')}<br/>
-                                    장소: ${record.location.value}
-                                `)
-                                    .style('left', (event.pageX + 10) + 'px')
-                                    .style('top', (event.pageY - 28) + 'px');
-                            })
-                            .on('mouseout', function() {
-                                d3.select(this).transition().duration(200).attr('r', radius);
-                                tooltip.transition().duration(200).style('opacity', 0);
-                            });
-
-                        // 감정 라벨
-                        g.append('text')
-                            .attr('x', xScale(timeOffset))
-                            .attr('y', yScale(sineValue) - radius - 5)
-                            .attr('text-anchor', 'middle')
-                            .attr('font-size', '10px')
-                            .attr('fill', '#333')
-                            .text(emotion.name);
+                        if (!emotionGroups[emotion.name]) emotionGroups[emotion.name] = [];
+                        emotionGroups[emotion.name].push({
+                            time: timeOffset,
+                            intensity: emotion.intensity,
+                            timestamp: record.timestamp,
+                            location: record.location.value
+                        });
                     });
                 });
+
+                const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
+                // 배경 그리드
+                const xScale = d3.scaleLinear().domain([0, cycleMs]).range([0, innerWidth]);
+                const yScale = d3.scaleLinear().domain([0, 10]).range([innerHeight, 0]);
+
+                g.append('g')
+                    .call(d3.axisLeft(yScale).ticks(5).tickSize(-innerWidth).tickFormat(''))
+                    .call(gg => gg.select('.domain').remove())
+                    .call(gg => gg.selectAll('.tick line').attr('stroke', '#f0f2ff').attr('stroke-width', 1));
+
+                // 감정별 에리어 + 라인 + 도트 그리기
+                const emotionEntries = Object.entries(emotionGroups);
+                const tooltip = d3.select('body').selectAll('.emo-tip').data([null]).join('div')
+                    .attr('class', 'tooltip emo-tip')
+                    .style('position', 'absolute')
+                    .style('opacity', 0)
+                    .style('pointer-events', 'none');
+
+                emotionEntries.forEach(([emotionName, pts]) => {
+                    const color = emotionColors[emotionName] || '#667eea';
+                    const sorted = [...pts].sort((a, b) => a.time - b.time);
+                    const gradId = `ag_${emotionName.replace(/\W/g, '_')}_${timeScale}`;
+
+                    const grad = defs.append('linearGradient')
+                        .attr('id', gradId)
+                        .attr('x1', '0').attr('y1', '0')
+                        .attr('x2', '0').attr('y2', '1');
+                    grad.append('stop').attr('offset', '0%').attr('stop-color', color).attr('stop-opacity', 0.35);
+                    grad.append('stop').attr('offset', '100%').attr('stop-color', color).attr('stop-opacity', 0.03);
+
+                    if (sorted.length > 1) {
+                        const areaGen = d3.area()
+                            .x(d => xScale(d.time)).y0(innerHeight).y1(d => yScale(d.intensity))
+                            .curve(d3.curveMonotoneX);
+                        g.append('path').datum(sorted)
+                            .attr('fill', `url(#${gradId})`).attr('d', areaGen);
+
+                        const lineGen = d3.line()
+                            .x(d => xScale(d.time)).y(d => yScale(d.intensity))
+                            .curve(d3.curveMonotoneX);
+                        g.append('path').datum(sorted)
+                            .attr('fill', 'none').attr('stroke', color)
+                            .attr('stroke-width', 2.5).attr('stroke-linejoin', 'round')
+                            .attr('d', lineGen);
+                    }
+
+                    sorted.forEach(pt => {
+                        const cx = xScale(pt.time);
+                        const cy = yScale(pt.intensity);
+                        const r = isMobile ? 5 : 6;
+                        const circle = g.append('circle')
+                            .attr('cx', cx).attr('cy', cy).attr('r', r)
+                            .attr('fill', color).attr('stroke', 'white').attr('stroke-width', 2)
+                            .style('cursor', 'pointer');
+
+                        const showTip = (pageX, pageY) => {
+                            circle.transition().duration(150).attr('r', r * 1.6);
+                            tooltip.transition().duration(150).style('opacity', 1);
+                            const t = new Date(pt.timestamp);
+                            tooltip.html(`<strong>${emotionName}</strong><br/>강도: ${pt.intensity}<br/>시간: ${t.toLocaleString('ko-KR')}<br/>장소: ${pt.location}`)
+                                .style('left', (pageX + 12) + 'px')
+                                .style('top', (pageY - 36) + 'px');
+                        };
+                        const hideTip = () => {
+                            circle.transition().duration(150).attr('r', r);
+                            tooltip.transition().duration(200).style('opacity', 0);
+                        };
+
+                        circle
+                            .on('mouseover', (event) => showTip(event.pageX, event.pageY))
+                            .on('mouseout', hideTip)
+                            .on('touchstart', (event) => {
+                                event.preventDefault();
+                                showTip(event.touches[0].pageX, event.touches[0].pageY);
+                                setTimeout(hideTip, 2000);
+                            });
+
+                        if (!isMobile) {
+                            g.append('text')
+                                .attr('x', cx).attr('y', cy - r - 5)
+                                .attr('text-anchor', 'middle').attr('font-size', '9px')
+                                .attr('fill', color).attr('font-weight', '600')
+                                .text(emotionName);
+                        }
+                    });
+                });
+
+                // 기간 내 데이터 없을 때 메시지
+                if (filteredRecords.length === 0) {
+                    g.append('text')
+                        .attr('x', innerWidth / 2).attr('y', innerHeight / 2)
+                        .attr('text-anchor', 'middle').attr('fill', '#adb5bd').attr('font-size', '14px')
+                        .text('이 기간에 기록이 없습니다');
+                }
 
                 // X축
                 const xAxis = d3.axisBottom(xScale)
-                    .ticks(10)
+                    .ticks(isMobile ? 5 : 8)
                     .tickFormat(d => {
                         const t = new Date(startTime.getTime() + d);
                         switch(timeScale) {
-                            case 'day':
-                                return t.getHours() + '시';
-                            case 'week':
-                                return ['일', '월', '화', '수', '목', '금', '토'][t.getDay()];
-                            case 'month':
-                                return t.getDate() + '일';
-                            case 'year':
-                                return (t.getMonth() + 1) + '월';
+                            case 'day': return t.getHours() + '시';
+                            case 'week': return ['일','월','화','수','목','금','토'][t.getDay()];
+                            case 'month': return t.getDate() + '일';
+                            case 'year': return (t.getMonth() + 1) + '월';
                         }
                     });
-
-                g.append('g')
-                    .attr('transform', `translate(0,${innerHeight})`)
-                    .call(xAxis);
+                g.append('g').attr('transform', `translate(0,${innerHeight})`)
+                    .call(xAxis)
+                    .selectAll('text').attr('font-size', isMobile ? '10px' : '12px');
 
                 // Y축
-                g.append('g')
-                    .call(d3.axisLeft(yScale));
+                g.append('g').call(d3.axisLeft(yScale).ticks(isMobile ? 5 : 10))
+                    .selectAll('text').attr('font-size', isMobile ? '10px' : '12px');
+
+                // Y축 라벨
+                g.append('text')
+                    .attr('transform', 'rotate(-90)')
+                    .attr('y', isMobile ? -28 : -42).attr('x', -innerHeight / 2)
+                    .attr('text-anchor', 'middle').attr('font-size', '11px').attr('fill', '#888')
+                    .text('감정 강도 (1~10)');
 
                 // 제목
                 svg.append('text')
-                    .attr('x', width / 2)
-                    .attr('y', 20)
-                    .attr('text-anchor', 'middle')
-                    .attr('font-size', '16px')
-                    .attr('font-weight', 'bold')
-                    .text(`감정의 시간 흐름 (${
-                        timeScale === 'day' ? '하루' :
-                        timeScale === 'week' ? '일주일' :
-                        timeScale === 'month' ? '한 달' : '일 년'
-                    })`);
+                    .attr('x', width / 2).attr('y', 22)
+                    .attr('text-anchor', 'middle').attr('font-size', '15px').attr('font-weight', 'bold').attr('fill', '#333')
+                    .text(`감정 강도 흐름 · ${timeScale === 'day' ? '하루' : timeScale === 'week' ? '이번 주' : timeScale === 'month' ? '이번 달' : '올해'}`);
 
-                return () => d3.selectAll('.tooltip').remove();
+                // 범례
+                if (emotionEntries.length > 0) {
+                    const legendG = svg.append('g')
+                        .attr('transform', `translate(${margin.left}, ${height - (isMobile ? 12 : 14)})`);
+                    emotionEntries.slice(0, 8).forEach(([name], i) => {
+                        const color = emotionColors[name] || '#667eea';
+                        const x = i * (isMobile ? 60 : 72);
+                        legendG.append('circle').attr('cx', x + 5).attr('cy', 0).attr('r', 5).attr('fill', color);
+                        legendG.append('text').attr('x', x + 13).attr('y', 4).attr('font-size', isMobile ? '9px' : '11px').attr('fill', '#555').text(name);
+                    });
+                }
+
+                return () => d3.selectAll('.emo-tip').remove();
             }, [records, timeScale]);
 
             return (
                 <div>
                     <div className="scale-buttons">
-                        <button
-                            className={`scale-button ${timeScale === 'day' ? 'active' : ''}`}
-                            onClick={() => setTimeScale('day')}
-                        >
-                            하루
-                        </button>
-                        <button
-                            className={`scale-button ${timeScale === 'week' ? 'active' : ''}`}
-                            onClick={() => setTimeScale('week')}
-                        >
-                            일주일
-                        </button>
-                        <button
-                            className={`scale-button ${timeScale === 'month' ? 'active' : ''}`}
-                            onClick={() => setTimeScale('month')}
-                        >
-                            한 달
-                        </button>
-                        <button
-                            className={`scale-button ${timeScale === 'year' ? 'active' : ''}`}
-                            onClick={() => setTimeScale('year')}
-                        >
-                            일 년
-                        </button>
+                        {[['day','하루'],['week','이번 주'],['month','이번 달'],['year','올해']].map(([val, label]) => (
+                            <button key={val}
+                                className={`scale-button ${timeScale === val ? 'active' : ''}`}
+                                onClick={() => setTimeScale(val)}
+                            >{label}</button>
+                        ))}
                     </div>
                     <svg ref={svgRef} id="sine-wave-chart" className="visualization-container"></svg>
+                </div>
+            );
+        }
+
+        // 달력 히트맵 컴포넌트 (최근 16주)
+        function CalendarHeatmap({ records }) {
+            const svgRef = useRef();
+
+            useEffect(() => {
+                if (!svgRef.current) return;
+
+                const svg = d3.select(svgRef.current);
+                svg.selectAll('*').remove();
+
+                const containerWidth = svgRef.current.parentElement.clientWidth || 600;
+                const isMobile = containerWidth < 500;
+                const WEEKS = 16;
+
+                const today = new Date();
+                today.setHours(23, 59, 59, 999);
+                const endDate = new Date(today);
+                const startDate = new Date(endDate.getTime() - WEEKS * 7 * 24 * 60 * 60 * 1000);
+                startDate.setHours(0, 0, 0, 0);
+
+                // 날짜별 기록 집계
+                const dayMap = {};
+                records.forEach(record => {
+                    const d = new Date(record.timestamp);
+                    const key = `${d.getFullYear()}-${String(d.getMonth()).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+                    if (!dayMap[key]) dayMap[key] = { count: 0, emotions: [] };
+                    dayMap[key].count += 1;
+                    record.emotions.forEach(e => {
+                        if (!dayMap[key].emotions.includes(e.name)) dayMap[key].emotions.push(e.name);
+                    });
+                });
+
+                const maxCount = Math.max(1, d3.max(Object.values(dayMap), d => d.count) || 1);
+                const colorScale = d3.scaleLinear()
+                    .domain([0, 1, maxCount])
+                    .range(['#ebedf0', '#b8a7e8', '#764ba2']);
+
+                const leftPad = isMobile ? 22 : 28;
+                const cellSize = Math.max(isMobile ? 12 : 16, Math.floor((containerWidth - leftPad - 20) / (WEEKS + 1) - 2));
+                const cellPad = 3;
+                const topPad = 42;
+                const totalH = topPad + 7 * (cellSize + cellPad) + 40;
+
+                svg.attr('width', containerWidth).attr('height', totalH);
+
+                const g = svg.append('g').attr('transform', `translate(${leftPad}, ${topPad})`);
+
+                // 모든 날짜 생성 (startDate부터 today까지)
+                const days = d3.timeDays(startDate, new Date(today.getTime() + 1));
+
+                // 툴팁
+                const tooltip = d3.select('body').selectAll('.cal-tip').data([null]).join('div')
+                    .attr('class', 'tooltip cal-tip')
+                    .style('position', 'absolute').style('opacity', 0).style('pointer-events', 'none');
+
+                days.forEach(date => {
+                    const key = `${date.getFullYear()}-${String(date.getMonth()).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+                    const dayData = dayMap[key];
+                    const count = dayData ? dayData.count : 0;
+                    const weekNum = Math.floor((date - startDate) / (7 * 24 * 60 * 60 * 1000));
+                    const dow = date.getDay();
+
+                    const rect = g.append('rect')
+                        .attr('x', weekNum * (cellSize + cellPad))
+                        .attr('y', dow * (cellSize + cellPad))
+                        .attr('width', cellSize).attr('height', cellSize)
+                        .attr('rx', 2).attr('fill', colorScale(count))
+                        .style('cursor', count > 0 ? 'pointer' : 'default');
+
+                    if (count > 0) {
+                        const showTip = (px, py) => {
+                            tooltip.style('opacity', 1)
+                                .html(`<strong>${date.toLocaleDateString('ko-KR')}</strong><br/>${count}개 기록<br/>${dayData.emotions.join(', ')}`)
+                                .style('left', (px + 10) + 'px').style('top', (py - 36) + 'px');
+                        };
+                        rect
+                            .on('mouseover', (event) => showTip(event.pageX, event.pageY))
+                            .on('mouseout', () => tooltip.style('opacity', 0))
+                            .on('touchstart', (event) => {
+                                event.preventDefault();
+                                showTip(event.touches[0].pageX, event.touches[0].pageY);
+                                setTimeout(() => tooltip.style('opacity', 0), 2500);
+                            });
+                    }
+                });
+
+                // 요일 라벨 (일~토)
+                ['일','월','화','수','목','금','토'].forEach((label, i) => {
+                    if (i % 2 === 0 || !isMobile) {
+                        g.append('text')
+                            .attr('x', -6).attr('y', i * (cellSize + cellPad) + cellSize / 2 + 1)
+                            .attr('text-anchor', 'end').attr('dominant-baseline', 'middle')
+                            .attr('font-size', isMobile ? '9px' : '10px').attr('fill', '#888')
+                            .text(label);
+                    }
+                });
+
+                // 월 라벨
+                const months = d3.timeMonths(startDate, new Date(today.getTime() + 1));
+                months.forEach(month => {
+                    const weekNum = Math.ceil((month - startDate) / (7 * 24 * 60 * 60 * 1000));
+                    g.append('text')
+                        .attr('x', weekNum * (cellSize + cellPad))
+                        .attr('y', -10)
+                        .attr('font-size', isMobile ? '9px' : '11px').attr('fill', '#666').attr('font-weight', '600')
+                        .text(`${month.getMonth() + 1}월`);
+                });
+
+                // 제목
+                svg.append('text')
+                    .attr('x', containerWidth / 2).attr('y', 18)
+                    .attr('text-anchor', 'middle').attr('font-size', '15px').attr('font-weight', 'bold').attr('fill', '#333')
+                    .text('감정 기록 달력 (최근 4개월)');
+
+                // 범례
+                const legendG = svg.append('g').attr('transform', `translate(${leftPad}, ${totalH - 16})`);
+                legendG.append('text').attr('x', 0).attr('y', 0).attr('font-size', '10px').attr('fill', '#888').attr('dominant-baseline', 'middle').text('없음');
+                [0, 1, 2, 3, 4].forEach((v, i) => {
+                    legendG.append('rect')
+                        .attr('x', 30 + i * (cellSize + 2)).attr('y', -cellSize / 2)
+                        .attr('width', cellSize).attr('height', cellSize).attr('rx', 2)
+                        .attr('fill', colorScale(v === 0 ? 0 : Math.ceil(maxCount * v / 4)));
+                });
+                legendG.append('text').attr('x', 30 + 5 * (cellSize + 2) + 4).attr('y', 0).attr('font-size', '10px').attr('fill', '#888').attr('dominant-baseline', 'middle').text('많음');
+
+                return () => d3.selectAll('.cal-tip').remove();
+            }, [records]);
+
+            return (
+                <div style={{ overflowX: 'auto', paddingBottom: '8px' }}>
+                    <svg ref={svgRef} className="calendar-heatmap-svg"></svg>
                 </div>
             );
         }
@@ -1793,30 +2031,24 @@
 
             return (
                 <div>
-                    <div className="scale-buttons" style={{ marginBottom: '20px' }}>
-                        <button
-                            className={`scale-button ${vizType === 'time' ? 'active' : ''}`}
-                            onClick={() => setVizType('time')}
-                        >
-                            ⏰ 시간
-                        </button>
-                        <button
-                            className={`scale-button ${vizType === 'location' ? 'active' : ''}`}
-                            onClick={() => setVizType('location')}
-                        >
-                            📍 장소
-                        </button>
-                        <button
-                            className={`scale-button ${vizType === 'body' ? 'active' : ''}`}
-                            onClick={() => setVizType('body')}
-                        >
-                            🫀 신체
-                        </button>
+                    <div className="viz-tab-buttons">
+                        {[
+                            ['time', '⏰ 강도 흐름'],
+                            ['location', '📍 장소'],
+                            ['body', '🫀 신체'],
+                            ['calendar', '📅 달력'],
+                        ].map(([val, label]) => (
+                            <button key={val}
+                                className={`viz-tab-btn ${vizType === val ? 'active' : ''}`}
+                                onClick={() => setVizType(val)}
+                            >{label}</button>
+                        ))}
                     </div>
 
                     {vizType === 'time' && <SineWaveVisualization records={records} />}
                     {vizType === 'location' && <LocationVisualization records={records} />}
                     {vizType === 'body' && <BodyHeatmap records={records} />}
+                    {vizType === 'calendar' && <CalendarHeatmap records={records} />}
                 </div>
             );
         }
