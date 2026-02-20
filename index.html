@@ -808,24 +808,41 @@
         ];
 
         // 감정 기록 폼 컴포넌트
-        function EmotionRecordForm({ onSave }) {
-            const [selectedEmotions, setSelectedEmotions] = useState([]);
+        function EmotionRecordForm({ onSave, initialRecord, onCancel }) {
+            const isEditing = !!initialRecord;
+            const [selectedEmotions, setSelectedEmotions] = useState(() =>
+                isEditing ? initialRecord.emotions.map(e => e.name) : []
+            );
             const [customEmotions, setCustomEmotions] = useState(() => {
                 try {
                     const saved = localStorage.getItem('customEmotions');
                     return saved ? JSON.parse(saved) : [];
                 } catch { return []; }
             });
-            const [emotionIntensities, setEmotionIntensities] = useState({});
-            const [bodySensations, setBodySensations] = useState([]);
-            const [timestamp, setTimestamp] = useState(getLocalDatetimeString());
-            const [locationValue, setLocationValue] = useState('집');
-            const [customCategories, setCustomCategories] = useState({});
+            const [emotionIntensities, setEmotionIntensities] = useState(() =>
+                isEditing ? Object.fromEntries(initialRecord.emotions.map(e => [e.name, e.intensity])) : {}
+            );
+            const [bodySensations, setBodySensations] = useState(() =>
+                isEditing ? initialRecord.bodySensations : []
+            );
+            const [timestamp, setTimestamp] = useState(() =>
+                isEditing
+                    ? new Date(new Date(initialRecord.timestamp) - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)
+                    : getLocalDatetimeString()
+            );
+            const [locationValue, setLocationValue] = useState(() =>
+                isEditing ? initialRecord.location.value : '집'
+            );
+            const [customCategories, setCustomCategories] = useState(() =>
+                isEditing ? (initialRecord.customCategories || {}) : {}
+            );
             const [sensationModal, setSensationModal] = useState(null);
             const [sensationModalType, setSensationModalType] = useState('');
             const [sensationModalDesc, setSensationModalDesc] = useState('');
             const [saveError, setSaveError] = useState('');
-            const [memo, setMemo] = useState('');
+            const [memo, setMemo] = useState(() =>
+                isEditing ? (initialRecord.memo || '') : ''
+            );
 
             const allEmotions = [...predefinedEmotions, ...customEmotions];
 
@@ -881,7 +898,7 @@
                 }
                 setSaveError('');
                 const record = {
-                    id: Date.now().toString(),
+                    id: isEditing ? initialRecord.id : Date.now().toString(),
                     timestamp: new Date(timestamp).toISOString(),
                     location: {
                         type: 'category',
@@ -1247,15 +1264,45 @@
                             {saveError}
                         </div>
                     )}
-                    <button className="save-button" onClick={handleSave}>
-                        저장하기
-                    </button>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                        <button className="save-button" onClick={handleSave} style={{ flex: 1 }}>
+                            {isEditing ? '수정 완료' : '저장하기'}
+                        </button>
+                        {isEditing && (
+                            <button
+                                type="button"
+                                onClick={onCancel}
+                                style={{
+                                    flex: 1,
+                                    padding: '14px',
+                                    fontSize: '1rem',
+                                    fontWeight: '600',
+                                    borderRadius: '12px',
+                                    border: '2px solid #6c757d',
+                                    background: 'white',
+                                    color: '#6c757d',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.target.style.background = '#6c757d';
+                                    e.target.style.color = 'white';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.target.style.background = 'white';
+                                    e.target.style.color = '#6c757d';
+                                }}
+                            >
+                                취소
+                            </button>
+                        )}
+                    </div>
                 </div>
             );
         }
 
         // 기록 목록 컴포넌트 (필터링 및 검색 기능 포함)
-        function RecordsList({ records, onDelete, onGoToRecord }) {
+        function RecordsList({ records, onDelete, onEdit, onGoToRecord }) {
             const [filterEmotion, setFilterEmotion] = useState('all');
             const [filterLocation, setFilterLocation] = useState('all');
             const [filterBody, setFilterBody] = useState('all');
@@ -1477,6 +1524,9 @@
                                             {new Date(record.timestamp).toLocaleString('ko-KR')}
                                         </div>
                                         <div className="record-actions">
+                                            <button className="action-button" onClick={() => onEdit(record)} style={{ marginRight: '8px' }}>
+                                                수정
+                                            </button>
                                             <button className="action-button" onClick={() => onDelete(record.id)}>
                                                 삭제
                                             </button>
@@ -2385,6 +2435,7 @@
         function App() {
             const [activeTab, setActiveTab] = useState('record');
             const [records, setRecords] = useState([]);
+            const [editingRecord, setEditingRecord] = useState(null);
             const [hiddenModesDetected, setHiddenModesDetected] = useState(new Set());
             const [toast, setToast] = useState('');
             const toastTimerRef = useRef(null);
@@ -2450,6 +2501,26 @@
                 setActiveTab('list');
                 showToast('기록이 저장되었습니다!');
                 syncToGist(newRecords);
+            };
+
+            const handleUpdateRecord = (updatedRecord) => {
+                const newRecords = records.map(r => r.id === updatedRecord.id ? updatedRecord : r);
+                setRecords(newRecords);
+                Storage.save(newRecords);
+                setHiddenModesDetected(detectHiddenCategories(newRecords));
+                setEditingRecord(null);
+                setActiveTab('list');
+                showToast('기록이 수정되었습니다!');
+                syncToGist(newRecords);
+            };
+
+            const handleEditRecord = (record) => {
+                setEditingRecord(record);
+                setActiveTab('record');
+            };
+
+            const handleCancelEdit = () => {
+                setEditingRecord(null);
             };
 
             const handleDeleteRecord = (id) => {
@@ -2630,8 +2701,8 @@
                     </div>
 
                     <div className="tab-content">
-                        {activeTab === 'record' && <EmotionRecordForm onSave={handleSaveRecord} />}
-                        {activeTab === 'list' && <RecordsList records={records} onDelete={handleDeleteRecord} onGoToRecord={() => setActiveTab('record')} />}
+                        {activeTab === 'record' && <EmotionRecordForm onSave={editingRecord ? handleUpdateRecord : handleSaveRecord} initialRecord={editingRecord} onCancel={handleCancelEdit} />}
+                        {activeTab === 'list' && <RecordsList records={records} onDelete={handleDeleteRecord} onEdit={handleEditRecord} onGoToRecord={() => setActiveTab('record')} />}
                         {activeTab === 'visualize' && <VisualizationTabs records={records} onGoToRecord={() => setActiveTab('record')} />}
                     </div>
                 </div>
