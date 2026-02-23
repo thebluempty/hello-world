@@ -2639,6 +2639,7 @@
         // 시각화 탭 컴포넌트 (하위 탭 포함)
         function VisualizationTabs({ records, onGoToRecord, hiddenModesDetected }) {
             const [vizType, setVizType] = useState('time');
+            const [bodyVizMode, setBodyVizMode] = useState('heatmap');
 
             if (records.length === 0) {
                 return (
@@ -2680,9 +2681,28 @@
                         ))}
                     </div>
 
+                    {/* 신체 탭일 때만 하위 전환 버튼 표시 */}
+                    {vizType === 'body' && (
+                        <div className="viz-tab-buttons" style={{ marginTop: '15px' }}>
+                            <button
+                                className={`viz-tab-btn ${bodyVizMode === 'heatmap' ? 'active' : ''}`}
+                                onClick={() => setBodyVizMode('heatmap')}
+                            >
+                                📊 히트맵
+                            </button>
+                            <button
+                                className={`viz-tab-btn ${bodyVizMode === 'lightflow' ? 'active' : ''}`}
+                                onClick={() => setBodyVizMode('lightflow')}
+                            >
+                                {hiddenModesDetected.size > 0 ? '✨ 통합 흐름' : '💫 빛의 흐름'}
+                            </button>
+                        </div>
+                    )}
+
                     {vizType === 'time' && <SineWaveVisualization records={records} />}
                     {vizType === 'location' && <LocationVisualization records={records} />}
-                    {vizType === 'body' && <LightFlowBody records={records} hiddenModesDetected={hiddenModesDetected} />}
+                    {vizType === 'body' && bodyVizMode === 'heatmap' && <BodyHeatmap records={records} />}
+                    {vizType === 'body' && bodyVizMode === 'lightflow' && <LightFlowBody records={records} hiddenModesDetected={hiddenModesDetected} />}
                     {vizType === 'calendar' && <CalendarHeatmap records={records} />}
                 </div>
             );
