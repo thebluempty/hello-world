@@ -808,8 +808,16 @@
         ];
 
         // 감정 기록 폼 컴포넌트
-        function EmotionRecordForm({ onSave, initialRecord, onCancel }) {
+        function EmotionRecordForm({ onSave, initialRecord, onCancel, hiddenModeActive, toggleHiddenMode }) {
             const isEditing = !!initialRecord;
+
+            // 감정명이 히든 키워드를 포함하는지 체크
+            const isHiddenEmotion = (emotionName) => {
+                const lowerName = emotionName.toLowerCase();
+                return Object.values(hiddenKeywords).some(keywords =>
+                    keywords.some(keyword => lowerName.includes(keyword.toLowerCase()))
+                );
+            };
             const [selectedEmotions, setSelectedEmotions] = useState(() =>
                 isEditing ? initialRecord.emotions.map(e => e.name) : []
             );
@@ -844,7 +852,12 @@
                 isEditing ? (initialRecord.memo || '') : ''
             );
 
-            const allEmotions = [...predefinedEmotions, ...customEmotions];
+            // 히든 모드가 비활성일 때는 히든 키워드가 포함된 커스텀 감정 숨김
+            const visibleCustomEmotions = hiddenModeActive
+                ? customEmotions
+                : customEmotions.filter(e => !isHiddenEmotion(e));
+
+            const allEmotions = [...predefinedEmotions, ...visibleCustomEmotions];
 
             const toggleEmotion = (emotion) => {
                 if (selectedEmotions.includes(emotion)) {
@@ -943,6 +956,60 @@
 
             return (
                 <div className="emotion-form">
+                    {/* 히든 모드 토글 버튼 */}
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginBottom: '20px',
+                        padding: '12px 16px',
+                        background: hiddenModeActive ? 'linear-gradient(135deg, #1a1a2e 0%, #2d1b4e 100%)' : '#f8f9fa',
+                        borderRadius: '12px',
+                        border: hiddenModeActive ? '2px solid #ffd700' : '2px solid #dee2e6',
+                        transition: 'all 0.3s'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <span style={{
+                                fontSize: '1.1rem',
+                                fontWeight: '600',
+                                color: hiddenModeActive ? '#ffd700' : '#495057'
+                            }}>
+                                {hiddenModeActive ? '✨ 확장 모드' : '📝 기본 모드'}
+                            </span>
+                            <span style={{
+                                fontSize: '0.85rem',
+                                color: hiddenModeActive ? '#b8a7e8' : '#6c757d'
+                            }}>
+                                {hiddenModeActive ? '숨은 감정들이 표시됩니다' : '기본 감정만 표시됩니다'}
+                            </span>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={toggleHiddenMode}
+                            style={{
+                                padding: '8px 16px',
+                                background: hiddenModeActive ? '#ffd700' : '#667eea',
+                                color: hiddenModeActive ? '#1a1a2e' : 'white',
+                                border: 'none',
+                                borderRadius: '8px',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                fontSize: '0.9rem'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.target.style.transform = 'translateY(-2px)';
+                                e.target.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.target.style.transform = 'translateY(0)';
+                                e.target.style.boxShadow = 'none';
+                            }}
+                        >
+                            {hiddenModeActive ? '기본 모드로' : '확장 모드로'}
+                        </button>
+                    </div>
+
                     <div className="form-section">
                         <h3>감정 선택</h3>
                         <div className="emotion-grid">
@@ -2786,8 +2853,26 @@
             const [records, setRecords] = useState([]);
             const [editingRecord, setEditingRecord] = useState(null);
             const [hiddenModesDetected, setHiddenModesDetected] = useState(new Set());
+            const [hiddenModeActive, setHiddenModeActive] = useState(() => {
+                try {
+                    const saved = localStorage.getItem('hiddenModeActive');
+                    return saved ? JSON.parse(saved) : false;
+                } catch(e) {
+                    return false;
+                }
+            });
             const [toast, setToast] = useState('');
             const toastTimerRef = useRef(null);
+
+            // 히든 모드 토글 함수
+            const toggleHiddenMode = () => {
+                const newMode = !hiddenModeActive;
+                setHiddenModeActive(newMode);
+                try {
+                    localStorage.setItem('hiddenModeActive', JSON.stringify(newMode));
+                } catch(e) {}
+                showToast(newMode ? '✨ 확장 모드 활성화' : '기본 모드로 전환');
+            };
 
             // GitHub Gist 동기화 상태
             const [showSettings, setShowSettings] = useState(false);
@@ -3050,7 +3135,7 @@
                     </div>
 
                     <div className="tab-content">
-                        {activeTab === 'record' && <EmotionRecordForm onSave={editingRecord ? handleUpdateRecord : handleSaveRecord} initialRecord={editingRecord} onCancel={handleCancelEdit} />}
+                        {activeTab === 'record' && <EmotionRecordForm onSave={editingRecord ? handleUpdateRecord : handleSaveRecord} initialRecord={editingRecord} onCancel={handleCancelEdit} hiddenModeActive={hiddenModeActive} toggleHiddenMode={toggleHiddenMode} />}
                         {activeTab === 'list' && <RecordsList records={records} onDelete={handleDeleteRecord} onEdit={handleEditRecord} onGoToRecord={() => setActiveTab('record')} />}
                         {activeTab === 'visualize' && <VisualizationTabs records={records} onGoToRecord={() => setActiveTab('record')} hiddenModesDetected={hiddenModesDetected} />}
                     </div>
