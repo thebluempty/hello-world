@@ -1166,6 +1166,155 @@ function ReadingMode({ articles }) {
   );
 }
 
+// ─── DRIVE 설정 ───────────────────────────────────────────────────────────────
+const DRIVE_API_KEY    = "AIzaSyDPx-aY-ZAauJZ677V7wwIz3YgLs00YwJY";
+const DRIVE_ROOT_ID    = "1Sqeyw1k04x0C8X2Wnmphhf2xsepj2E-B";
+
+async function driveList(folderId) {
+  const q   = encodeURIComponent(`'${folderId}' in parents and trashed=false`);
+  const url = `https://www.googleapis.com/drive/v3/files?q=${q}&key=${DRIVE_API_KEY}&fields=files(id,name,mimeType)&orderBy=name&pageSize=200`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Drive API 오류 ${res.status}`);
+  const data = await res.json();
+  return data.files || [];
+}
+
+async function driveReadText(fileId, mimeType) {
+  let url;
+  if (mimeType === "application/vnd.google-apps.document") {
+    url = `https://www.googleapis.com/drive/v3/files/${fileId}/export?mimeType=text/plain&key=${DRIVE_API_KEY}`;
+  } else {
+    url = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&key=${DRIVE_API_KEY}`;
+  }
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`파일 읽기 오류 ${res.status}`);
+  return res.text();
+}
+
+// ─── DRIVE MODE ───────────────────────────────────────────────────────────────
+function DriveMode() {
+  const [path, setPath]       = useState([{ id: DRIVE_ROOT_ID, name: "법률 자료" }]);
+  const [files, setFiles]     = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError]     = useState(null);
+  const [viewing, setViewing] = useState(null);   // { name, content }
+  const [viewLoading, setViewLoading] = useState(false);
+
+  const currentFolder = path[path.length - 1];
+
+  useEffect(() => {
+    setLoading(true); setError(null); setFiles([]);
+    driveList(currentFolder.id)
+      .then(setFiles)
+      .catch(e => setError(e.message))
+      .finally(() => setLoading(false));
+  }, [currentFolder.id]);
+
+  const openFolder = f => {
+    setPath(prev => [...prev, { id: f.id, name: f.name }]);
+    setViewing(null);
+  };
+
+  const openFile = async f => {
+    setViewLoading(true);
+    setViewing({ name: f.name, content: null });
+    try {
+      const text = await driveReadText(f.id, f.mimeType);
+      setViewing({ name: f.name, content: text });
+    } catch (e) {
+      setViewing({ name: f.name, content: `오류: ${e.message}` });
+    } finally {
+      setViewLoading(false);
+    }
+  };
+
+  const goToPath = idx => {
+    setPath(prev => prev.slice(0, idx + 1));
+    setViewing(null);
+  };
+
+  const isFolder   = m => m === "application/vnd.google-apps.folder";
+  const isReadable = m => ["application/vnd.google-apps.document","text/plain","application/octet-stream"].includes(m)
+                       || m.startsWith("text/");
+
+  const fileIcon = m => isFolder(m) ? "📁"
+    : m.includes("document") ? "📄"
+    : m.includes("spreadsheet") ? "📊"
+    : m.includes("pdf") ? "📕"
+    : "📝";
+
+  // ── 파일 내용 뷰어 ──
+  if (viewing) {
+    return (
+      <div style={{ width:"100%", maxWidth:720 }}>
+        <button onClick={() => setViewing(null)}
+          style={{ marginBottom:18, padding:"8px 18px", borderRadius:10, border:"1px solid #222",
+            background:"transparent", color:"#aaa", cursor:"pointer", fontSize:13, fontFamily:"inherit" }}>
+          ← 목록으로
+        </button>
+        <div style={{ fontSize:15, fontWeight:700, color:"#fff", marginBottom:16 }}>{viewing.name}</div>
+        {viewLoading
+          ? <div style={{ textAlign:"center", color:"#444", padding:60, fontSize:14 }}>불러오는 중...</div>
+          : <div style={{ background:"#0b0b1d", borderRadius:14, padding:"24px 26px", border:"1px solid #1a1a2e",
+              fontSize:14, color:"#ccc", lineHeight:2, whiteSpace:"pre-wrap",
+              maxHeight:"65vh", overflowY:"auto" }}>
+              {viewing.content || "(내용 없음)"}
+            </div>
+        }
+      </div>
+    );
+  }
+
+  // ── 폴더 목록 ──
+  return (
+    <div style={{ width:"100%", maxWidth:720 }}>
+      {/* 경로 탐색 */}
+      <div style={{ display:"flex", alignItems:"center", gap:5, marginBottom:22, flexWrap:"wrap" }}>
+        {path.map((p, i) => (
+          <React.Fragment key={p.id}>
+            {i > 0 && <span style={{ color:"#333", fontSize:13 }}>/</span>}
+            <button onClick={() => goToPath(i)}
+              style={{ padding:"4px 13px", borderRadius:20, border:"1px solid #222",
+                background: i===path.length-1 ? "#1a1a2e" : "transparent",
+                color: i===path.length-1 ? "#fff" : "#555",
+                cursor:"pointer", fontSize:12, fontFamily:"inherit" }}>
+              {p.name}
+            </button>
+          </React.Fragment>
+        ))}
+      </div>
+
+      {loading && <div style={{ textAlign:"center", color:"#444", padding:50, fontSize:14 }}>폴더 불러오는 중...</div>}
+      {error   && <div style={{ color:"#e74c3c", textAlign:"center", padding:20, fontSize:13 }}>오류: {error}</div>}
+      {!loading && !error && files.length===0 && (
+        <div style={{ color:"#444", textAlign:"center", padding:50, fontSize:13 }}>파일이 없습니다</div>
+      )}
+
+      <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+        {files.map(f => {
+          const folder  = isFolder(f.mimeType);
+          const readable = isReadable(f.mimeType);
+          const clickable = folder || readable;
+          return (
+            <div key={f.id} onClick={() => folder ? openFolder(f) : (readable ? openFile(f) : null)}
+              style={{ display:"flex", alignItems:"center", gap:14, padding:"15px 20px",
+                background:"#0a0a18", borderRadius:12, border:"1px solid #111",
+                cursor: clickable ? "pointer" : "default",
+                opacity: clickable ? 1 : 0.4, transition:"border-color .15s" }}
+              onMouseEnter={e => { if(clickable) e.currentTarget.style.borderColor="#2a2a3e"; }}
+              onMouseLeave={e => { if(clickable) e.currentTarget.style.borderColor="#111"; }}>
+              <span style={{ fontSize:22 }}>{fileIcon(f.mimeType)}</span>
+              <span style={{ fontSize:14, color:"#ddd", flex:1 }}>{f.name}</span>
+              {folder   && <span style={{ fontSize:11, color:"#333" }}>→</span>}
+              {readable && !folder && <span style={{ fontSize:11, color:"#444" }}>열기</span>}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ─── STATS RING ───────────────────────────────────────────────────────────────
 function StatsRing({ known, total }) {
   const pct = total ? known/total : 0;
@@ -1190,6 +1339,7 @@ const MODES = [
   {id:"fillin",label:"빈칸 채우기",icon:"✏️"},
   {id:"quiz",label:"AI 퀴즈",icon:"🤖"},
   {id:"reading",label:"읽기 모드",icon:"📖"},
+  {id:"drive",label:"원문 보기",icon:"📂"},
 ];
 
 function App() {
@@ -1303,7 +1453,7 @@ function App() {
       </div>
 
       {/* Progress */}
-      {mode!=="reading"&&mode!=="quiz"&&(
+      {mode!=="reading"&&mode!=="quiz"&&mode!=="drive"&&(
         <div style={{width:"100%",maxWidth:640,marginBottom:22}}>
           <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:"#333",marginBottom:5,letterSpacing:1}}>
             <span>TODAY · DAY {daySet+1}</span><span>{cardIndex+1} / {todayArticles.length}</span>
@@ -1324,6 +1474,7 @@ function App() {
           onNext={()=>setCardIndex(i=>Math.min(i+1,todayArticles.length-1))}/>}
         {mode==="quiz"&&<AIQuiz articles={todayArticles}/>}
         {mode==="reading"&&<ReadingMode articles={todayArticles}/>}
+        {mode==="drive"&&<DriveMode/>}
       </div>
 
       {/* Legend */}
