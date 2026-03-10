@@ -1285,7 +1285,27 @@ function DriveMode() {
       </div>
 
       {loading && <div style={{ textAlign:"center", color:"#444", padding:50, fontSize:14 }}>폴더 불러오는 중...</div>}
-      {error   && <div style={{ color:"#e74c3c", textAlign:"center", padding:20, fontSize:13 }}>오류: {error}</div>}
+      {error && (
+        <div style={{ background:"#1a0707", border:"1px solid #e74c3c44", borderRadius:14,
+          padding:"22px 24px", fontSize:13, lineHeight:2 }}>
+          <div style={{ color:"#e74c3c", fontWeight:700, marginBottom:10, fontSize:14 }}>
+            Drive API 연결 오류 ({error})
+          </div>
+          {error.includes("403") ? (
+            <div style={{ color:"#bbb" }}>
+              <b style={{color:"#fff"}}>해결 방법:</b><br/>
+              1. <a href="https://console.cloud.google.com/apis/library/drive.googleapis.com"
+                   target="_blank" rel="noreferrer"
+                   style={{color:"#4A90D9"}}>Google Cloud Console → Drive API</a> 접속<br/>
+              2. 이 API 키가 속한 프로젝트 선택<br/>
+              3. <b style={{color:"#fff"}}>"사용 설정"</b> 클릭<br/>
+              4. API 키 → <b style={{color:"#fff"}}>HTTP 리퍼러 제한이 없는지</b> 확인
+            </div>
+          ) : (
+            <div style={{ color:"#bbb" }}>오류 내용: {error}</div>
+          )}
+        </div>
+      )}
       {!loading && !error && files.length===0 && (
         <div style={{ color:"#444", textAlign:"center", padding:50, fontSize:13 }}>파일이 없습니다</div>
       )}
