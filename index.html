@@ -1054,22 +1054,43 @@
                             </button>
                         </div>
 
-                        {selectedEmotions.map(emotion => (
-                            <div key={emotion} className="intensity-slider">
-                                <label>{emotion} 강도</label>
-                                <input
-                                    type="range"
-                                    min="1"
-                                    max="10"
-                                    value={emotionIntensities[emotion] || 5}
-                                    onChange={(e) => setEmotionIntensities({
-                                        ...emotionIntensities,
-                                        [emotion]: parseInt(e.target.value)
-                                    })}
-                                />
-                                <div className="intensity-value">{emotionIntensities[emotion] || 5} / 10</div>
-                            </div>
-                        ))}
+                        {selectedEmotions.map(emotion => {
+                            const intensity = emotionIntensities[emotion] || 5;
+                            const getIntensityColor = (val) => {
+                                if (val <= 3) return '#90EE90';
+                                if (val <= 6) return '#FFB347';
+                                return '#FF6B6B';
+                            };
+                            return (
+                                <div key={emotion} className="intensity-slider">
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                        <label style={{ margin: 0 }}>{emotion} 강도</label>
+                                        <span style={{
+                                            fontSize: '1.2rem',
+                                            fontWeight: 'bold',
+                                            color: getIntensityColor(intensity),
+                                            minWidth: '45px',
+                                            textAlign: 'right'
+                                        }}>
+                                            {intensity} / 10
+                                        </span>
+                                    </div>
+                                    <input
+                                        type="range"
+                                        min="1"
+                                        max="10"
+                                        value={intensity}
+                                        onChange={(e) => setEmotionIntensities({
+                                            ...emotionIntensities,
+                                            [emotion]: parseInt(e.target.value)
+                                        })}
+                                        style={{
+                                            background: `linear-gradient(90deg, ${getIntensityColor(intensity)} 0%, ${getIntensityColor(intensity)} ${intensity * 10}%, #e9ecef ${intensity * 10}%, #e9ecef 100%)`
+                                        }}
+                                    />
+                                </div>
+                            );
+                        })}
                     </div>
 
                     <div className="form-section">
