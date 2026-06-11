@@ -1,5 +1,5 @@
 node_modules/
-dist/
+# dist/ — 미리보기(githack)용으로 커밋에 포함
 dev-dist/
 *.local
 index.html.orig.bak

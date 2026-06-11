@@ -3,6 +3,8 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
+  // 상대 경로 빌드 — githack 등 서브 경로 정적 호스팅에서도 동작
+  base: './',
   plugins: [
     react(),
     VitePWA({
