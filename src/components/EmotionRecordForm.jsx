@@ -287,13 +287,15 @@ export default function EmotionRecordForm({ onSave, initialRecord, onCancel, hid
                                 type="range"
                                 min="1"
                                 max="10"
+                                aria-label={`${emotion} 강도`}
+                                aria-valuetext={`${intensity} / 10`}
                                 value={intensity}
                                 onChange={(e) => setEmotionIntensities({
                                     ...emotionIntensities,
                                     [emotion]: parseInt(e.target.value)
                                 })}
                                 style={{
-                                    background: `linear-gradient(90deg, ${getIntensityColor(intensity)} 0%, ${getIntensityColor(intensity)} ${intensity * 10}%, #e9ecef ${intensity * 10}%, #e9ecef 100%)`
+                                    background: `linear-gradient(90deg, ${getIntensityColor(intensity)} 0%, ${getIntensityColor(intensity)} ${intensity * 10}%, var(--surface-hover) ${intensity * 10}%, var(--surface-hover) 100%)`
                                 }}
                             />
                         </div>

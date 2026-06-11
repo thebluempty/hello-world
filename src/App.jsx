@@ -307,6 +307,32 @@ export default function App() {
         showToast('리마인더를 껐습니다');
     };
 
+    // 데이터 전체 삭제 (2단계 확인)
+    const handleDeleteAll = async () => {
+        const first = await confirmDialog({
+            title: '데이터 전체 삭제',
+            message: `기기에 저장된 기록 ${records.length}건과 커스텀 감정이 모두 삭제됩니다.\n삭제 전 JSON 내보내기로 백업할 수 있습니다.`,
+            confirmText: '계속',
+            danger: true
+        });
+        if (!first) return;
+        const second = await confirmDialog({
+            title: '정말 삭제할까요?',
+            message: '이 작업은 되돌릴 수 없습니다.\n(GitHub Gist에 동기화된 데이터는 남아 있으며, GitHub에서 직접 삭제할 수 있습니다.)',
+            confirmText: '전체 삭제',
+            danger: true
+        });
+        if (!second) return;
+        try {
+            localStorage.removeItem('emotionRecords');
+            localStorage.removeItem('customEmotions');
+        } catch (e) {}
+        setRecords([]);
+        setHiddenModesDetected(new Set());
+        setEditingRecord(null);
+        showToast('모든 기록이 삭제되었습니다');
+    };
+
     // 연결 해제
     const handleDisconnect = async () => {
         const ok = await confirmDialog({
@@ -341,7 +367,7 @@ export default function App() {
                         )}
                         {/* Gist 동기화 상태 표시 */}
                         {GistSync.getToken() && (
-                            <span className={`sync-status ${syncStatus}`}>
+                            <span className={`sync-status ${syncStatus}`} role="status">
                                 <span className="sync-dot"></span>
                                 {syncMsg}
                             </span>
@@ -382,6 +408,16 @@ export default function App() {
                                         </button>
                                     </React.Fragment>
                                 )}
+                            </div>
+                            <div className="settings-row" style={{ marginTop: '8px' }}>
+                                <button className="export-button" onClick={handleDeleteAll}
+                                    style={{ background: 'rgba(248,113,113,0.3)', borderColor: 'rgba(248,113,113,0.7)' }}>
+                                    🗑️ 데이터 전체 삭제
+                                </button>
+                                <a className="export-button" href="./privacy.html" target="_blank" rel="noopener"
+                                    style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>
+                                    개인정보처리방침
+                                </a>
                             </div>
                         </div>
                         <hr className="settings-divider" />

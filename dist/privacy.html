@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emoscape 개인정보처리방침</title>
+    <style>
+        :root {
+            color-scheme: light dark;
+            --bg: #ffffff; --text: #1f2937; --muted: #6c757d; --accent: #6d28d9; --border: #e5e7eb;
+        }
+        @media (prefers-color-scheme: dark) {
+            :root { --bg: #241f38; --text: #ece9f8; --muted: #9b97b0; --accent: #c4b5fd; --border: #3d3756; }
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: var(--bg); color: var(--text);
+            max-width: 720px; margin: 0 auto; padding: 32px 20px 60px;
+            line-height: 1.7;
+        }
+        h1 { font-size: 1.5rem; color: var(--accent); }
+        h2 { font-size: 1.1rem; margin-top: 28px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+        p, li { font-size: 0.95rem; }
+        .muted { color: var(--muted); font-size: 0.85rem; }
+        a { color: var(--accent); }
+    </style>
+</head>
+<body>
+    <h1>Emoscape 개인정보처리방침</h1>
+    <p class="muted">시행일: 2026-06-11</p>
+
+    <h2>1. 수집하는 정보</h2>
+    <p>Emoscape는 사용자가 입력한 감정 기록(감정 이름, 강도, 신체 감각, 장소, 메모, 시각)을 처리합니다.
+    이 데이터는 <strong>사용자의 기기 안(브라우저 LocalStorage)에만 저장</strong>되며,
+    개발자나 제3자의 서버로 전송·수집되지 않습니다.</p>
+
+    <h2>2. 선택적 클라우드 동기화 (GitHub Gist)</h2>
+    <p>사용자가 직접 GitHub 토큰을 입력해 동기화를 켠 경우에만, 기록 데이터가
+    <strong>사용자 본인의 GitHub 계정의 비공개 Gist</strong>에 저장됩니다.
+    이 데이터는 GitHub의 <a href="https://docs.github.com/privacy" target="_blank" rel="noopener">개인정보처리방침</a>의 적용을 받으며,
+    개발자는 접근할 수 없습니다. 설정에서 언제든 연동을 해제할 수 있습니다.</p>
+
+    <h2>3. 알림 권한</h2>
+    <p>기록 리마인더 기능을 켜면 브라우저 알림 권한을 요청합니다.
+    알림은 기기에서 직접 생성되며, 알림을 위해 어떤 데이터도 외부로 전송되지 않습니다.</p>
+
+    <h2>4. 데이터 보관 및 삭제</h2>
+    <ul>
+        <li>모든 데이터는 사용자가 직접 삭제할 때까지 기기에 보관됩니다.</li>
+        <li>앱 설정의 <strong>"데이터 전체 삭제"</strong>로 기기의 모든 기록을 즉시 삭제할 수 있습니다.</li>
+        <li>Gist 동기화를 사용한 경우, GitHub 계정의 Gist는 GitHub에서 직접 삭제할 수 있습니다.</li>
+        <li>브라우저의 사이트 데이터 삭제로도 모든 데이터가 제거됩니다.</li>
+    </ul>
+
+    <h2>5. 제3자 제공 및 분석 도구</h2>
+    <p>Emoscape는 광고, 추적기, 분석 도구를 사용하지 않으며, 어떤 데이터도 제3자에게 제공하지 않습니다.</p>
+
+    <h2>6. 문의</h2>
+    <p>개인정보 관련 문의: <a href="mailto:saintsunyata@gmail.com">saintsunyata@gmail.com</a></p>
+
+    <p class="muted">본 방침이 변경되는 경우 이 페이지를 통해 공지합니다.</p>
+</body>
+</html>
