@@ -828,6 +828,204 @@ body {
     to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
+/* ─── 빠른 기록 ───────────────────────────────────────────── */
+.quick-record {
+    background: var(--accent-soft);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 14px 16px;
+    margin: 0 auto 24px;
+    max-width: 800px;
+    animation: fadeIn 0.3s ease;
+}
+
+.quick-record-title {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--text);
+    margin-bottom: 10px;
+}
+
+.quick-record-sub {
+    font-weight: 500;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-left: 6px;
+}
+
+.quick-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.quick-chip {
+    padding: 8px 14px;
+    min-height: 40px;
+    border-radius: 18px;
+    border: 2px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-weight: 600;
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.quick-chip:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(102, 126, 234, 0.2);
+}
+
+.quick-chip:active {
+    transform: scale(0.93);
+}
+
+.quick-chip.saved {
+    background: var(--success);
+    border-color: var(--success);
+    color: white;
+}
+
+/* ─── 인사이트 ────────────────────────────────────────────── */
+.insights {
+    display: grid;
+    gap: 16px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.insight-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.stat-card {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px 12px;
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--primary-text);
+}
+
+.stat-label {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+.insight-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 18px 20px;
+    box-shadow: var(--card-shadow);
+    animation: fadeIn 0.3s ease both;
+}
+
+.insight-card h3 {
+    font-size: 1rem;
+    color: var(--text-strong);
+    margin-bottom: 12px;
+}
+
+.insight-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.92rem;
+    color: var(--text-soft);
+}
+
+.insight-row:last-child {
+    border-bottom: none;
+}
+
+.insight-row strong {
+    color: var(--text);
+}
+
+.insight-count {
+    color: var(--text-muted);
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.delta {
+    font-size: 0.78rem;
+    color: var(--accent-strong);
+    margin-left: 6px;
+    font-weight: 700;
+}
+
+.insight-top-emotions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.tod-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.tod-row:last-child { margin-bottom: 0; }
+
+.tod-label {
+    width: 70px;
+    font-size: 0.85rem;
+    color: var(--text-soft);
+    flex-shrink: 0;
+}
+
+.tod-bar-wrap {
+    flex: 1;
+    background: var(--surface-2);
+    border-radius: 6px;
+    height: 12px;
+    overflow: hidden;
+}
+
+.tod-bar {
+    height: 100%;
+    background: var(--accent-gradient);
+    border-radius: 6px;
+    transition: width 0.4s ease;
+}
+
+.tod-count {
+    min-width: 88px;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    text-align: right;
+    flex-shrink: 0;
+}
+
+/* ─── 스트릭 칩 (헤더) ────────────────────────────────────── */
+.streak-chip {
+    background: rgba(255,255,255,0.18);
+    border: 1.5px solid rgba(255,255,255,0.5);
+    color: white;
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    backdrop-filter: blur(4px);
+}
+
 /* ─── GitHub Gist 설정 패널 ───────────────────────────────── */
 .settings-panel {
     background: rgba(0,0,0,0.25);

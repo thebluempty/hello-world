@@ -4,16 +4,24 @@ import { GistSync } from './lib/gistSync.js';
 import { detectHiddenCategories } from './lib/hidden.js';
 import { importFromJSON, exportToJSON, exportToCSV } from './lib/exportImport.js';
 import { THEME_MODES, getThemeMode, setThemeMode, applyTheme } from './lib/theme.js';
+import { calcStreak } from './lib/insights.js';
+import { getReminderTime, setReminderTime, notificationsSupported, ensurePermission, checkAndFireReminder } from './lib/reminder.js';
 import { useDialog } from './components/Dialog.jsx';
 import EmotionRecordForm from './components/EmotionRecordForm.jsx';
 import RecordsList from './components/RecordsList.jsx';
 import VisualizationTabs from './components/VisualizationTabs.jsx';
+import InsightsView from './components/InsightsView.jsx';
+import QuickRecord from './components/QuickRecord.jsx';
 
 const TABS = [
     { id: 'record', icon: '📝', label: '기록하기' },
     { id: 'list', icon: '📋', label: '기록 목록' },
-    { id: 'visualize', icon: '📊', label: '시각화' }
+    { id: 'visualize', icon: '📊', label: '시각화' },
+    { id: 'insights', icon: '💡', label: '인사이트' }
 ];
+
+const isSameLocalDay = (a, b) =>
+    a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 
 export default function App() {
     const { confirmDialog, alertDialog } = useDialog();
@@ -185,6 +193,27 @@ export default function App() {
         syncToGist(merged);
     };
 
+    // 원탭 빠른 기록 — 강도 5, 장소는 최근 기록을 따름
+    const handleQuickSave = (emotionName) => {
+        const recent = records.reduce((a, b) =>
+            !a || new Date(b.timestamp) > new Date(a.timestamp) ? b : a, null);
+        const record = {
+            id: Date.now().toString(),
+            timestamp: new Date().toISOString(),
+            location: { type: 'category', value: (recent && recent.location && recent.location.value) || '기타' },
+            emotions: [{ name: emotionName, intensity: 5 }],
+            bodySensations: [],
+            customCategories: {},
+            memo: ''
+        };
+        const newRecords = [...records, record];
+        setRecords(newRecords);
+        persist(newRecords);
+        setHiddenModesDetected(detectHiddenCategories(newRecords));
+        showToast(`⚡ "${emotionName}" 기록 완료`);
+        syncToGist(newRecords);
+    };
+
     const handleImportClick = () => {
         importFromJSON(
             async (imported) => {
@@ -239,6 +268,45 @@ export default function App() {
         }
     };
 
+    // 기록 리마인더
+    const [reminderTime, setReminderTimeState] = useState(getReminderTime);
+    const [reminderInput, setReminderInput] = useState(() => getReminderTime() || '21:00');
+
+    useEffect(() => {
+        const check = () => {
+            const now = new Date();
+            const hasToday = records.some(r => isSameLocalDay(new Date(r.timestamp), now));
+            checkAndFireReminder(hasToday);
+        };
+        check();
+        const iv = setInterval(check, 60000);
+        return () => clearInterval(iv);
+    }, [records]);
+
+    const handleEnableReminder = async () => {
+        if (!notificationsSupported()) {
+            alertDialog({ title: '알림 미지원', message: '이 브라우저는 알림을 지원하지 않습니다.' });
+            return;
+        }
+        const granted = await ensurePermission();
+        if (!granted) {
+            alertDialog({
+                title: '알림 권한 필요',
+                message: '알림 권한이 거부되어 있습니다.\n브라우저 설정에서 이 사이트의 알림을 허용해주세요.'
+            });
+            return;
+        }
+        setReminderTime(reminderInput);
+        setReminderTimeState(reminderInput);
+        showToast(`⏰ 매일 ${reminderInput} 리마인더 설정됨`);
+    };
+
+    const handleDisableReminder = () => {
+        setReminderTime('');
+        setReminderTimeState('');
+        showToast('리마인더를 껐습니다');
+    };
+
     // 연결 해제
     const handleDisconnect = async () => {
         const ok = await confirmDialog({
@@ -265,6 +333,12 @@ export default function App() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                     <h1 style={{ margin: 0 }}>Emoscape</h1>
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'flex-end' }}>
+                        {/* 연속 기록 스트릭 */}
+                        {calcStreak(records) > 0 && (
+                            <span className="streak-chip" title="연속 기록 일수">
+                                🔥 {calcStreak(records)}일
+                            </span>
+                        )}
                         {/* Gist 동기화 상태 표시 */}
                         {GistSync.getToken() && (
                             <span className={`sync-status ${syncStatus}`}>
@@ -309,6 +383,33 @@ export default function App() {
                                     </React.Fragment>
                                 )}
                             </div>
+                        </div>
+                        <hr className="settings-divider" />
+                        <div className="settings-section">
+                            <h4>⏰ 기록 리마인더</h4>
+                            <div className="settings-row">
+                                <input
+                                    type="time"
+                                    className="settings-token-input"
+                                    style={{ minWidth: '110px', flex: '0 1 auto', fontFamily: 'inherit' }}
+                                    value={reminderInput}
+                                    onChange={e => setReminderInput(e.target.value)}
+                                    aria-label="리마인더 시간"
+                                />
+                                <button className="export-button" onClick={handleEnableReminder}>
+                                    {reminderTime ? '시간 변경' : '켜기'}
+                                </button>
+                                {reminderTime && (
+                                    <button className="export-button" onClick={handleDisableReminder}>
+                                        끄기
+                                    </button>
+                                )}
+                            </div>
+                            <p className="settings-hint">
+                                {reminderTime
+                                    ? `매일 ${reminderTime}에 기록이 없으면 알림을 보냅니다 (앱이 열려 있을 때).`
+                                    : '설정한 시간까지 기록이 없으면 알림을 보냅니다 (앱이 열려 있을 때).'}
+                            </p>
                         </div>
                         <hr className="settings-divider" />
                         <div className="settings-section">
@@ -371,9 +472,15 @@ export default function App() {
             </nav>
 
             <div className="tab-content">
-                {activeTab === 'record' && <EmotionRecordForm onSave={editingRecord ? handleUpdateRecord : handleSaveRecord} initialRecord={editingRecord} onCancel={handleCancelEdit} hiddenModeActive={hiddenModeActive} toggleHiddenMode={toggleHiddenMode} />}
+                {activeTab === 'record' && (
+                    <React.Fragment>
+                        {!editingRecord && <QuickRecord onQuickSave={handleQuickSave} />}
+                        <EmotionRecordForm onSave={editingRecord ? handleUpdateRecord : handleSaveRecord} initialRecord={editingRecord} onCancel={handleCancelEdit} hiddenModeActive={hiddenModeActive} toggleHiddenMode={toggleHiddenMode} />
+                    </React.Fragment>
+                )}
                 {activeTab === 'list' && <RecordsList records={records} loading={initialLoading} onDelete={handleDeleteRecord} onEdit={handleEditRecord} onGoToRecord={() => setActiveTab('record')} />}
                 {activeTab === 'visualize' && <VisualizationTabs records={records} onGoToRecord={() => setActiveTab('record')} hiddenModesDetected={hiddenModesDetected} />}
+                {activeTab === 'insights' && <InsightsView records={records} onGoToRecord={() => setActiveTab('record')} />}
             </div>
         </div>
         {toast && (

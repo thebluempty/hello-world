@@ -28,9 +28,13 @@ src/
 │   ├── hidden.js           숨은 키워드 시스템
 │   ├── exportImport.js     JSON/CSV 내보내기·가져오기
 │   ├── theme.js            테마 모드 (system/light/dark) 적용
+│   ├── insights.js         스트릭/주간요약/감정×장소/시간대 통계
+│   ├── reminder.js         기록 리마인더 (Notification API, 키: reminderTime/reminderLastFired)
 │   └── datetime.js         datetime-local 헬퍼
 └── components/
     ├── Dialog.jsx              DialogProvider + useDialog (confirm/prompt/alert 대체)
+    ├── QuickRecord.jsx         원탭 빠른 기록 (강도 5 즉시 저장)
+    ├── InsightsView.jsx        인사이트 탭 (통계 카드)
     ├── EmotionRecordForm.jsx   기록 폼 (감정·강도·신체 맵)
     ├── RecordsList.jsx         기록 목록 (필터·검색·스켈레톤)
     ├── VisualizationTabs.jsx   시각화 탭 컨테이너
