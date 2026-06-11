@@ -63,20 +63,38 @@
 ### ✨ 숨은 기능
 특정 키워드(말나, 알아차림, 공, 성 등)를 사용자 정의 카테고리에 입력하면 확장 모드가 활성화됩니다.
 
+## 개발 및 빌드
+
+```bash
+npm install        # 의존성 설치
+npm run dev        # 개발 서버 (HMR)
+npm run build      # 프로덕션 빌드 → dist/
+npm run preview    # 빌드 결과 로컬 확인
+```
+
 ## 사용 방법
 
-1. `index.html` 파일을 브라우저에서 열기
+1. `npm run dev`(개발) 또는 빌드 후 `dist/`를 정적 호스팅에 배포
 2. "기록하기" 탭에서 감정 기록
 3. "기록 목록"에서 저장된 기록 확인 및 필터링
 4. "시각화"에서 시간/장소/신체별 패턴 분석
 5. 헤더의 내보내기 버튼으로 데이터 백업
+6. 모바일 브라우저에서 "홈 화면에 추가"로 앱처럼 설치 가능 (PWA)
 
 ## 기술 스택
 
-- React 18 (CDN)
+- Vite 6 + React 18 (npm, 프로덕션 번들링)
 - D3.js v7 (데이터 시각화)
-- LocalStorage (데이터 저장)
+- vite-plugin-pwa (Workbox) — 오프라인 지원, 자동 업데이트 서비스 워커
+- LocalStorage (데이터 저장) + GitHub Gist 동기화(선택)
 - Vanilla CSS (스타일링)
+
+## PWA
+
+- `manifest.webmanifest` 자동 생성 (앱 이름/아이콘/테마 색상)
+- 서비스 워커가 앱 셸을 프리캐시하여 오프라인에서도 동작
+- 아이콘: `public/pwa-192x192.png`, `pwa-512x512.png`, `maskable-icon-512x512.png`, `apple-touch-icon.png`, `favicon.svg`
+- GitHub API(Gist 동기화) 요청은 캐시하지 않음
 
 ## 핵심 개념
 
@@ -100,5 +118,6 @@
 - **Phase 1 (MVP)**: 기본 기록 및 사인파 시각화
 - **Phase 2 (시각화)**: 장소/신체 시각화, 사용자 정의 카테고리
 - **Phase 3 (고급 기능)**: 필터링, 검색, 데이터 내보내기
+- **Phase 4 (구조 전환)**: 단일 HTML → Vite + React 프로젝트 전환, PWA 적용
 
 전체 개발 과정이 git 커밋으로 문서화되어 있습니다.
