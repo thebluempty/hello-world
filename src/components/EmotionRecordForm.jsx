@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { getLocalDatetimeString } from '../lib/datetime.js';
 import { predefinedEmotions, emotionColors, sensationTypes, locationCategories } from '../constants.js';
 import { hiddenKeywords } from '../lib/hidden.js';
+import { useDialog } from './Dialog.jsx';
 
 export default function EmotionRecordForm({ onSave, initialRecord, onCancel, hiddenModeActive, toggleHiddenMode }) {
+    const { confirmDialog, promptDialog } = useDialog();
     const isEditing = !!initialRecord;
 
     // 감정명이 히든 키워드를 포함하는지 체크
@@ -66,8 +68,13 @@ export default function EmotionRecordForm({ onSave, initialRecord, onCancel, hid
         }
     };
 
-    const addCustomEmotion = () => {
-        const emotion = prompt('새로운 감정을 입력하세요:');
+    const addCustomEmotion = async () => {
+        const emotion = await promptDialog({
+            title: '새 감정 추가',
+            message: '나만의 감정 이름을 입력하세요.',
+            placeholder: '예: 뿌듯함, 그리움',
+            confirmText: '추가'
+        });
         if (emotion && emotion.trim() && !allEmotions.includes(emotion.trim())) {
             const updated = [...customEmotions, emotion.trim()];
             setCustomEmotions(updated);
@@ -75,8 +82,14 @@ export default function EmotionRecordForm({ onSave, initialRecord, onCancel, hid
         }
     };
 
-    const removeCustomEmotion = (emotion) => {
-        if (confirm(`"${emotion}" 감정을 삭제하시겠습니까?`)) {
+    const removeCustomEmotion = async (emotion) => {
+        const ok = await confirmDialog({
+            title: '감정 삭제',
+            message: `"${emotion}" 감정을 삭제하시겠습니까?`,
+            confirmText: '삭제',
+            danger: true
+        });
+        if (ok) {
             const updated = customEmotions.filter(e => e !== emotion);
             setCustomEmotions(updated);
             // 선택된 감정에서도 제거
@@ -158,22 +171,22 @@ export default function EmotionRecordForm({ onSave, initialRecord, onCancel, hid
                 alignItems: 'center',
                 marginBottom: '20px',
                 padding: '12px 16px',
-                background: hiddenModeActive ? 'linear-gradient(135deg, #1a1a2e 0%, #2d1b4e 100%)' : '#f8f9fa',
+                background: hiddenModeActive ? 'linear-gradient(135deg, #1a1a2e 0%, #2d1b4e 100%)' : 'var(--surface-2)',
                 borderRadius: '12px',
-                border: hiddenModeActive ? '2px solid #ffd700' : '2px solid #dee2e6',
+                border: hiddenModeActive ? '2px solid #ffd700' : '2px solid var(--border)',
                 transition: 'all 0.3s'
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <span style={{
                         fontSize: '1.1rem',
                         fontWeight: '600',
-                        color: hiddenModeActive ? '#ffd700' : '#495057'
+                        color: hiddenModeActive ? '#ffd700' : 'var(--text-soft)'
                     }}>
                         {hiddenModeActive ? '✨ 확장 모드' : '📝 기본 모드'}
                     </span>
                     <span style={{
                         fontSize: '0.85rem',
-                        color: hiddenModeActive ? '#b8a7e8' : '#6c757d'
+                        color: hiddenModeActive ? '#b8a7e8' : 'var(--text-muted)'
                     }}>
                         {hiddenModeActive ? '숨은 감정들이 표시됩니다' : '기본 감정만 표시됩니다'}
                     </span>
@@ -299,7 +312,7 @@ export default function EmotionRecordForm({ onSave, initialRecord, onCancel, hid
                         alignItems: 'center',
                         justifyItems: 'center',
                         padding: '15px',
-                        background: '#f8f9fa',
+                        background: 'var(--surface-2)',
                         borderRadius: '15px'
                     }}>
                         {/* Row 1: Head */}
@@ -374,7 +387,7 @@ export default function EmotionRecordForm({ onSave, initialRecord, onCancel, hid
                                 <strong>{sensation.area}</strong>
                                 <br/>
                                 {sensation.sensationType}
-                                {sensation.description && <div style={{ marginTop: '5px', color: '#6c757d' }}>{sensation.description}</div>}
+                                {sensation.description && <div style={{ marginTop: '5px', color: 'var(--text-muted)' }}>{sensation.description}</div>}
                                 <button
                                     onClick={() => removeSensation(index)}
                                     style={{
@@ -399,15 +412,15 @@ export default function EmotionRecordForm({ onSave, initialRecord, onCancel, hid
                     <div style={{
                         marginTop: '15px',
                         padding: '15px',
-                        background: '#f0f2ff',
+                        background: 'var(--accent-soft)',
                         border: '2px solid #667eea',
                         borderRadius: '12px'
                     }}>
-                        <div style={{ fontWeight: '700', marginBottom: '10px', color: '#4a5fc1' }}>
+                        <div style={{ fontWeight: '700', marginBottom: '10px', color: 'var(--accent-strong)' }}>
                             {sensationModal.partName} - 감각 입력
                         </div>
                         <div style={{ marginBottom: '10px' }}>
-                            <div style={{ fontSize: '0.85rem', marginBottom: '6px', color: '#495057' }}>감각 타입 선택:</div>
+                            <div style={{ fontSize: '0.85rem', marginBottom: '6px', color: 'var(--text-soft)' }}>감각 타입 선택:</div>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                                 {sensationTypes.map(type => (
                                     <button
@@ -448,7 +461,7 @@ export default function EmotionRecordForm({ onSave, initialRecord, onCancel, hid
                                 style={{
                                     padding: '12px 24px',
                                     minHeight: '44px',
-                                    background: sensationModalType ? '#667eea' : '#adb5bd',
+                                    background: sensationModalType ? 'var(--accent)' : 'var(--text-muted)',
                                     color: 'white',
                                     border: 'none',
                                     borderRadius: '8px',
@@ -461,8 +474,8 @@ export default function EmotionRecordForm({ onSave, initialRecord, onCancel, hid
                                 style={{
                                     padding: '12px 24px',
                                     minHeight: '44px',
-                                    background: 'white',
-                                    color: '#6c757d',
+                                    background: 'var(--surface)',
+                                    color: 'var(--text-muted)',
                                     border: '1px solid #ced4da',
                                     borderRadius: '8px',
                                     cursor: 'pointer'
@@ -514,7 +527,7 @@ export default function EmotionRecordForm({ onSave, initialRecord, onCancel, hid
 
             <div className="form-section">
                 <h3>추가 카테고리 (선택)</h3>
-                <p style={{ color: '#6c757d', fontSize: '0.9rem', marginBottom: '15px' }}>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '15px' }}>
                     자유롭게 카테고리를 추가하여 더 깊은 기록을 남겨보세요
                 </p>
                 {Object.entries(customCategories).map(([key, value], index) => (
@@ -581,7 +594,7 @@ export default function EmotionRecordForm({ onSave, initialRecord, onCancel, hid
             </div>
 
             {saveError && (
-                <div style={{ color: '#dc3545', textAlign: 'center', marginBottom: '10px', fontWeight: '600' }}>
+                <div style={{ color: 'var(--danger)', textAlign: 'center', marginBottom: '10px', fontWeight: '600' }}>
                     {saveError}
                 </div>
             )}
@@ -593,26 +606,8 @@ export default function EmotionRecordForm({ onSave, initialRecord, onCancel, hid
                     <button
                         type="button"
                         onClick={onCancel}
-                        style={{
-                            flex: 1,
-                            padding: '14px',
-                            fontSize: '1rem',
-                            fontWeight: '600',
-                            borderRadius: '12px',
-                            border: '2px solid #6c757d',
-                            background: 'white',
-                            color: '#6c757d',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s'
-                        }}
-                        onMouseEnter={(e) => {
-                            e.target.style.background = '#6c757d';
-                            e.target.style.color = 'white';
-                        }}
-                        onMouseLeave={(e) => {
-                            e.target.style.background = 'white';
-                            e.target.style.color = '#6c757d';
-                        }}
+                        className="btn btn-secondary"
+                        style={{ flex: 1, padding: '14px', fontSize: '1rem', borderRadius: '12px' }}
                     >
                         취소
                     </button>

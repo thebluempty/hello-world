@@ -89,7 +89,7 @@ export default function LightFlowBody({ records, hiddenModesDetected }) {
         bodyG.append('rect')
             .attr('width', bodyWidth)
             .attr('height', bodyHeight)
-            .attr('fill', hiddenModesDetected.size > 0 ? '#1a1a2e' : '#f8f9fa')
+            .style('fill', hiddenModesDetected.size > 0 ? '#1a1a2e' : 'var(--surface-2)')
             .attr('stroke', hiddenModesDetected.size > 0 ? '#ffd700' : '#dee2e6')
             .attr('stroke-width', hiddenModesDetected.size > 0 ? 3 : 2)
             .attr('rx', 10);
@@ -150,7 +150,7 @@ export default function LightFlowBody({ records, hiddenModesDetected }) {
             svg.append('text')
                 .attr('x', width / 2).attr('y', 25)
                 .attr('text-anchor', 'middle').attr('font-size', '16px').attr('font-weight', 'bold')
-                .attr('fill', '#333')
+                .style('fill', 'var(--text)')
                 .text('신체 감정 지도');
 
         // 숨은 모드: 빛의 흐름 애니메이션

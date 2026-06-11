@@ -11,24 +11,11 @@ export default function VisualizationTabs({ records, onGoToRecord, hiddenModesDe
 
     if (records.length === 0) {
         return (
-            <div style={{ textAlign: 'center', color: '#6c757d', padding: '50px' }}>
-                <div style={{ fontSize: '3rem', marginBottom: '15px' }}>📊</div>
-                <div style={{ fontSize: '1.1rem', marginBottom: '20px' }}>기록이 있어야 시각화를 볼 수 있습니다.</div>
-                <button
-                    onClick={onGoToRecord}
-                    style={{
-                        padding: '12px 28px',
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '25px',
-                        cursor: 'pointer',
-                        fontSize: '1rem',
-                        fontWeight: '600'
-                    }}
-                >
-                    지금 기록하기
-                </button>
+            <div className="empty-state">
+                <div className="empty-icon">📊</div>
+                <div className="empty-title">기록이 있어야 시각화를 볼 수 있습니다</div>
+                <div className="empty-sub">감정을 기록하면 시간·장소·신체 패턴이 그려집니다.</div>
+                <button className="empty-cta" onClick={onGoToRecord}>지금 기록하기</button>
             </div>
         );
     }

@@ -8,8 +8,9 @@
 - **UI**: React 18 (npm 패키지)
 - **시각화**: D3.js v7 (npm 패키지)
 - **PWA**: vite-plugin-pwa (Workbox, autoUpdate) — manifest·서비스 워커 자동 생성
-- **데이터 저장**: LocalStorage (키: `emotionRecords`, `hiddenModeActive`, `ghToken`, `ghGistId`, `ghUser`) + GitHub Gist 동기화(선택)
-- **스타일**: Vanilla CSS (`src/styles.css`)
+- **데이터 저장**: LocalStorage (키: `emotionRecords`, `hiddenModeActive`, `customEmotions`, `themeMode`, `ghToken`, `ghGistId`, `ghUser`) + GitHub Gist 동기화(선택)
+- **스타일**: Vanilla CSS (`src/styles.css`) — CSS 변수 기반 디자인 토큰, `[data-theme="dark"]`로 다크 모드
+- **UI 패턴**: 모바일(≤768px)은 하단 탭 바, alert/confirm/prompt 금지 → `useDialog()` 훅 사용
 
 ## 파일 구조
 ```
@@ -22,14 +23,16 @@ src/
 ├── styles.css              전체 스타일
 ├── constants.js            감정/색상/감각/장소 상수
 ├── lib/
-│   ├── storage.js          LocalStorage 래퍼
+│   ├── storage.js          LocalStorage 래퍼 (save는 성공 여부 boolean 반환)
 │   ├── gistSync.js         GitHub Gist 동기화
 │   ├── hidden.js           숨은 키워드 시스템
 │   ├── exportImport.js     JSON/CSV 내보내기·가져오기
+│   ├── theme.js            테마 모드 (system/light/dark) 적용
 │   └── datetime.js         datetime-local 헬퍼
 └── components/
+    ├── Dialog.jsx              DialogProvider + useDialog (confirm/prompt/alert 대체)
     ├── EmotionRecordForm.jsx   기록 폼 (감정·강도·신체 맵)
-    ├── RecordsList.jsx         기록 목록 (필터·검색)
+    ├── RecordsList.jsx         기록 목록 (필터·검색·스켈레톤)
     ├── VisualizationTabs.jsx   시각화 탭 컨테이너
     ├── SineWaveVisualization.jsx / LocationVisualization.jsx
     ├── BodyHeatmap.jsx / LightFlowBody.jsx / CalendarHeatmap.jsx
@@ -38,6 +41,9 @@ src/
 ## 코드 수정 규칙
 - 컴포넌트는 `src/components/`, 공용 로직은 `src/lib/`에 배치
 - LocalStorage 키 이름은 기존 사용자 데이터 호환을 위해 변경 금지
+- **색상은 하드코딩 금지** — `src/styles.css`의 CSS 변수(`var(--text)` 등) 사용, 다크 모드 항상 고려
+- D3 차트에서 테마 색이 필요하면 `.attr()` 대신 `.style('fill', 'var(--...)')` 사용 (attr은 CSS 변수 미지원)
+- `alert/confirm/prompt` 사용 금지 — `useDialog()`의 `confirmDialog/promptDialog/alertDialog` 사용
 - 변경 후 `npm run build`로 빌드 확인
 - 커밋 메시지는 한국어로 작성
 

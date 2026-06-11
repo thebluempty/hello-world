@@ -66,7 +66,8 @@ export default function CalendarHeatmap({ records }) {
                 .attr('x', weekNum * (cellSize + cellPad))
                 .attr('y', dow * (cellSize + cellPad))
                 .attr('width', cellSize).attr('height', cellSize)
-                .attr('rx', 2).attr('fill', colorScale(count))
+                .attr('rx', 2)
+                .style('fill', count > 0 ? colorScale(count) : 'var(--surface-hover)')
                 .style('cursor', count > 0 ? 'pointer' : 'default');
 
             if (count > 0) {
@@ -104,14 +105,14 @@ export default function CalendarHeatmap({ records }) {
             g.append('text')
                 .attr('x', weekNum * (cellSize + cellPad))
                 .attr('y', -10)
-                .attr('font-size', isMobile ? '9px' : '11px').attr('fill', '#666').attr('font-weight', '600')
+                .attr('font-size', isMobile ? '9px' : '11px').style('fill', 'var(--text-muted)').attr('font-weight', '600')
                 .text(`${month.getMonth() + 1}월`);
         });
 
         // 제목
         svg.append('text')
             .attr('x', containerWidth / 2).attr('y', 18)
-            .attr('text-anchor', 'middle').attr('font-size', '15px').attr('font-weight', 'bold').attr('fill', '#333')
+            .attr('text-anchor', 'middle').attr('font-size', '15px').attr('font-weight', 'bold').style('fill', 'var(--text)')
             .text('감정 기록 달력 (최근 4개월)');
 
         // 범례

@@ -1,12 +1,14 @@
 
 // 데이터 스토리지
 export const Storage = {
+    // 저장 성공 여부 반환 — 실패 UI는 호출 측에서 처리
     save(records) {
         try {
             localStorage.setItem('emotionRecords', JSON.stringify(records));
+            return true;
         } catch (e) {
             console.error('저장 실패:', e);
-            alert('저장 공간이 부족합니다. 오래된 기록을 삭제해주세요.');
+            return false;
         }
     },
     load() {

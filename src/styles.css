@@ -1,7 +1,85 @@
+/* ─── 디자인 토큰 ─────────────────────────────────────────── */
+:root {
+    --bg-gradient: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #a21caf 100%);
+    --header-gradient: linear-gradient(135deg, #4f46e5 0%, #7c3aed 60%, #a21caf 100%);
+    --primary-gradient: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #a21caf 100%);
+    --accent-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+
+    --surface: #ffffff;
+    --surface-2: #f8f9fa;
+    --surface-hover: #ede9fe;
+    --tab-bg: #f5f3ff;
+    --tab-border: #e5e1fb;
+
+    --text: #1f2937;
+    --text-strong: #3b0764;
+    --text-soft: #495057;
+    --text-muted: #6c757d;
+
+    --border: #e5e7eb;
+    --primary: #7c3aed;
+    --primary-text: #6d28d9;
+    --accent: #667eea;
+    --accent-strong: #4a5fc1;
+    --accent-soft: #f0f2ff;
+    --accent-soft-2: #e8ecff;
+    --danger: #dc3545;
+    --danger-soft: #fef2f2;
+    --danger-border: #fca5a5;
+    --success: #28a745;
+
+    --card-shadow: 0 2px 8px rgba(124, 58, 237, 0.07);
+    --card-shadow-hover: 0 8px 24px rgba(124, 58, 237, 0.15);
+    --container-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 20px;
+
+    --bottom-nav-height: 64px;
+}
+
+[data-theme="dark"] {
+    --bg-gradient: linear-gradient(135deg, #1e1b4b 0%, #3b0764 50%, #4a044e 100%);
+    --header-gradient: linear-gradient(135deg, #312e81 0%, #5b21b6 60%, #86198f 100%);
+
+    --surface: #241f38;
+    --surface-2: #2d2745;
+    --surface-hover: #383054;
+    --tab-bg: #1d1830;
+    --tab-border: #383054;
+
+    --text: #ece9f8;
+    --text-strong: #e9d5ff;
+    --text-soft: #c6c2d9;
+    --text-muted: #9b97b0;
+
+    --border: #3d3756;
+    --primary: #8b5cf6;
+    --primary-text: #c4b5fd;
+    --accent: #818cf8;
+    --accent-strong: #a5b4fc;
+    --accent-soft: #2b2f4d;
+    --accent-soft-2: #323763;
+    --danger: #f87171;
+    --danger-soft: #3a2330;
+    --danger-border: #7f3a44;
+
+    --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    --card-shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.4);
+    --container-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+/* ─── 기본 ────────────────────────────────────────────────── */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+}
+
+html {
+    -webkit-tap-highlight-color: transparent;
 }
 
 body {
@@ -10,10 +88,11 @@ body {
         sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #a21caf 100%);
+    background: var(--bg-gradient);
     background-size: 300% 300%;
     animation: bgShift 12s ease infinite;
     min-height: 100vh;
+    color: var(--text);
 }
 
 @keyframes bgShift {
@@ -29,14 +108,15 @@ body {
 }
 
 .app-container {
-    background: white;
-    border-radius: 20px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    background: var(--surface);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--container-shadow);
     overflow: hidden;
+    transition: background 0.3s;
 }
 
 .app-header {
-    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 60%, #a21caf 100%);
+    background: var(--header-gradient);
     color: white;
     padding: 28px 30px 24px;
     text-align: center;
@@ -73,10 +153,11 @@ body {
     font-size: 1rem;
 }
 
+/* ─── 탭 네비게이션 (데스크톱: 상단 / 모바일: 하단 고정) ──── */
 .tab-navigation {
     display: flex;
-    background: #f5f3ff;
-    border-bottom: 2px solid #e5e1fb;
+    background: var(--tab-bg);
+    border-bottom: 2px solid var(--tab-border);
 }
 
 .tab-button {
@@ -87,29 +168,39 @@ body {
     cursor: pointer;
     font-size: 0.95rem;
     font-weight: 600;
-    color: #9591b0;
+    color: var(--text-muted);
     transition: all 0.25s;
     border-bottom: 3px solid transparent;
     letter-spacing: 0.2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
 }
 
 .tab-button:hover {
-    background: #ede9fe;
-    color: #6d28d9;
+    background: var(--surface-hover);
+    color: var(--primary-text);
 }
 
 .tab-button.active {
-    color: #6d28d9;
-    border-bottom-color: #7c3aed;
-    background: white;
+    color: var(--primary-text);
+    border-bottom-color: var(--primary);
+    background: var(--surface);
+}
+
+.tab-icon {
+    font-size: 1.1rem;
+    line-height: 1;
 }
 
 .tab-content {
     padding: 30px;
     min-height: 500px;
+    animation: fadeIn 0.25s ease;
 }
 
-/* 감정 기록 폼 */
+/* ─── 감정 기록 폼 ────────────────────────────────────────── */
 .emotion-form {
     max-width: 800px;
     margin: 0 auto;
@@ -121,7 +212,7 @@ body {
 
 .form-section h3 {
     margin-bottom: 15px;
-    color: #3b0764;
+    color: var(--text-strong);
     font-size: 1.15rem;
     font-weight: 700;
     display: flex;
@@ -148,9 +239,10 @@ body {
 
 .emotion-chip {
     padding: 10px 18px;
-    border: 2px solid #e5e7eb;
+    border: 2px solid var(--border);
     border-radius: 20px;
-    background: white;
+    background: var(--surface);
+    color: var(--text);
     cursor: pointer;
     transition: all 0.22s cubic-bezier(0.34,1.56,0.64,1);
     text-align: center;
@@ -164,6 +256,10 @@ body {
     box-shadow: 0 6px 16px rgba(124,58,237,0.18);
 }
 
+.emotion-chip:active {
+    transform: scale(0.97);
+}
+
 .emotion-chip.selected {
     color: white;
     transform: translateY(-2px) scale(1.04);
@@ -172,17 +268,17 @@ body {
 
 .add-custom-button {
     padding: 12px 20px;
-    border: 2px dashed #667eea;
+    border: 2px dashed var(--accent);
     border-radius: 25px;
-    background: white;
-    color: #667eea;
+    background: var(--surface);
+    color: var(--accent);
     cursor: pointer;
     font-weight: 500;
     transition: all 0.3s;
 }
 
 .add-custom-button:hover {
-    background: #f8f9fa;
+    background: var(--surface-2);
 }
 
 .intensity-slider {
@@ -192,7 +288,7 @@ body {
 .intensity-slider label {
     display: block;
     margin-bottom: 5px;
-    color: #6c757d;
+    color: var(--text-muted);
     font-size: 0.9rem;
 }
 
@@ -222,9 +318,8 @@ body {
     text-align: center;
     margin-top: 5px;
     font-weight: 600;
-    color: #667eea;
+    color: var(--accent);
 }
-
 
 .sensation-list {
     flex: 1;
@@ -232,17 +327,17 @@ body {
 
 .sensation-item {
     padding: 15px;
-    background: #f8f9fa;
+    background: var(--surface-2);
     border-radius: 10px;
     margin-bottom: 10px;
 }
 
 .body-part-button {
     padding: 6px 10px;
-    background: white;
-    border: 2px solid #667eea;
-    border-radius: 8px;
-    color: #667eea;
+    background: var(--surface);
+    border: 2px solid var(--accent);
+    border-radius: var(--radius-sm);
+    color: var(--accent);
     font-weight: 600;
     font-size: 0.8rem;
     cursor: pointer;
@@ -256,20 +351,20 @@ body {
 }
 
 .body-part-button:hover {
-    background: #667eea;
+    background: var(--accent);
     color: white;
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
 }
 
 .body-part-button:active {
-    transform: translateY(0);
+    transform: translateY(0) scale(0.96);
 }
 
 .body-part-button.has-sensation {
-    background: #e8ecff;
-    border-color: #4a5fc1;
-    color: #4a5fc1;
+    background: var(--accent-soft-2);
+    border-color: var(--accent-strong);
+    color: var(--accent-strong);
 }
 
 .body-part-button.has-sensation::after {
@@ -278,7 +373,7 @@ body {
     position: absolute;
     top: 2px;
     right: 3px;
-    color: #4a5fc1;
+    color: var(--accent-strong);
 }
 
 .input-group {
@@ -288,7 +383,7 @@ body {
 .input-group label {
     display: block;
     margin-bottom: 5px;
-    color: #6c757d;
+    color: var(--text-muted);
     font-weight: 500;
 }
 
@@ -297,26 +392,27 @@ body {
 .input-group textarea {
     width: 100%;
     padding: 10px 14px;
-    border: 2px solid #e5e7eb;
+    border: 2px solid var(--border);
     border-radius: 10px;
     font-size: 1rem;
     transition: border-color 0.2s, box-shadow 0.2s;
-    background: #fafafa;
+    background: var(--surface-2);
+    color: var(--text);
 }
 
 .input-group input:focus,
 .input-group select:focus,
 .input-group textarea:focus {
     outline: none;
-    border-color: #7c3aed;
-    background: white;
-    box-shadow: 0 0 0 3px rgba(124,58,237,0.1);
+    border-color: var(--primary);
+    background: var(--surface);
+    box-shadow: 0 0 0 3px rgba(124,58,237,0.15);
 }
 
 .save-button {
     width: 100%;
     padding: 16px;
-    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #a21caf 100%);
+    background: var(--primary-gradient);
     background-size: 200% auto;
     color: white;
     border: none;
@@ -336,11 +432,11 @@ body {
 }
 
 .save-button:active {
-    transform: translateY(0);
+    transform: translateY(0) scale(0.99);
     box-shadow: 0 2px 8px rgba(124,58,237,0.3);
 }
 
-/* 기록 목록 */
+/* ─── 기록 목록 ───────────────────────────────────────────── */
 .records-list {
     display: grid;
     gap: 16px;
@@ -348,22 +444,24 @@ body {
 
 .record-card {
     padding: 18px 20px;
-    background: white;
-    border-radius: 16px;
-    border-left: 5px solid #7c3aed;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    border-left: 5px solid var(--primary);
     transition: all 0.25s;
-    box-shadow: 0 2px 8px rgba(124,58,237,0.07);
+    box-shadow: var(--card-shadow);
+    animation: fadeIn 0.3s ease both;
 }
 
 @media (hover: hover) {
     .record-card:hover {
         transform: translateX(4px);
-        box-shadow: 0 8px 24px rgba(124,58,237,0.15);
+        box-shadow: var(--card-shadow-hover);
     }
 }
 
 .record-card:active {
-    background: #faf5ff;
+    background: var(--surface-2);
 }
 
 .record-header {
@@ -375,7 +473,7 @@ body {
 
 .record-time {
     font-weight: 700;
-    color: #6d28d9;
+    color: var(--primary-text);
     font-size: 0.92rem;
 }
 
@@ -387,19 +485,23 @@ body {
 .action-button {
     padding: 6px 14px;
     min-height: 36px;
-    border: 1px solid #e5e7eb;
-    background: white;
-    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    border-radius: var(--radius-sm);
     cursor: pointer;
     transition: all 0.2s;
     font-size: 0.85rem;
-    color: #6b7280;
+    color: var(--text-muted);
 }
 
 .action-button:hover {
-    background: #fef2f2;
-    border-color: #fca5a5;
-    color: #dc2626;
+    background: var(--danger-soft);
+    border-color: var(--danger-border);
+    color: var(--danger);
+}
+
+.action-button:active {
+    transform: scale(0.95);
 }
 
 .record-emotions {
@@ -417,15 +519,17 @@ body {
     opacity: 0.9;
 }
 
-/* 시각화 */
+/* ─── 시각화 ──────────────────────────────────────────────── */
 .visualization-container {
     width: 100%;
     height: 420px;
+    color: var(--text-muted); /* d3 axis는 currentColor 사용 → 테마 연동 */
 }
 
 .calendar-heatmap-svg {
     width: 100%;
     display: block;
+    color: var(--text-muted);
 }
 
 @keyframes barGrow {
@@ -449,23 +553,23 @@ body {
 .viz-tab-btn {
     padding: 10px 18px;
     min-height: 44px;
-    border: 2px solid #dee2e6;
-    background: white;
+    border: 2px solid var(--border);
+    background: var(--surface);
     border-radius: 22px;
     cursor: pointer;
     font-size: 0.95rem;
     font-weight: 600;
-    color: #6c757d;
+    color: var(--text-muted);
     transition: all 0.25s;
 }
 
 .viz-tab-btn:hover {
-    border-color: #667eea;
-    color: #667eea;
+    border-color: var(--accent);
+    color: var(--accent);
 }
 
 .viz-tab-btn.active {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--accent-gradient);
     color: white;
     border-color: transparent;
     box-shadow: 0 4px 12px rgba(102, 126, 234, 0.35);
@@ -480,21 +584,22 @@ body {
 
 .scale-button {
     padding: 10px 20px;
-    border: 2px solid #dee2e6;
-    background: white;
+    border: 2px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
     border-radius: 20px;
     cursor: pointer;
     transition: all 0.3s;
 }
 
 .scale-button:hover {
-    border-color: #667eea;
+    border-color: var(--accent);
 }
 
 .scale-button.active {
-    background: #667eea;
+    background: var(--accent);
     color: white;
-    border-color: #667eea;
+    border-color: var(--accent);
 }
 
 #sine-wave-chart {
@@ -512,14 +617,225 @@ body {
     font-size: 0.9rem;
     opacity: 0;
     transition: opacity 0.3s;
+    z-index: 1100;
 }
-/* GitHub Gist 설정 패널 */
+
+/* ─── 빈 상태 ─────────────────────────────────────────────── */
+.empty-state {
+    text-align: center;
+    color: var(--text-muted);
+    padding: 60px 20px;
+    animation: fadeIn 0.3s ease;
+}
+
+.empty-state .empty-icon {
+    font-size: 3.2rem;
+    margin-bottom: 16px;
+}
+
+.empty-state .empty-title {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--text-soft);
+    margin-bottom: 8px;
+}
+
+.empty-state .empty-sub {
+    font-size: 0.92rem;
+    margin-bottom: 24px;
+}
+
+.empty-state .empty-cta {
+    padding: 12px 28px;
+    background: var(--accent-gradient);
+    color: white;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: all 0.25s;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.35);
+}
+
+.empty-state .empty-cta:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.45);
+}
+
+.empty-state .empty-cta:active {
+    transform: scale(0.97);
+}
+
+/* ─── 스켈레톤 로딩 ───────────────────────────────────────── */
+.skeleton-card {
+    padding: 18px 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    border-left: 5px solid var(--border);
+}
+
+.skeleton-line {
+    height: 14px;
+    border-radius: 7px;
+    background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-hover) 50%, var(--surface-2) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s ease infinite;
+    margin-bottom: 10px;
+}
+
+.skeleton-line:last-child { margin-bottom: 0; }
+.skeleton-line.w40 { width: 40%; }
+.skeleton-line.w70 { width: 70%; }
+.skeleton-line.w90 { width: 90%; }
+
+@keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* ─── 다이얼로그 (alert/confirm/prompt 대체) ─────────────── */
+.dialog-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(2px);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: overlayIn 0.2s ease;
+}
+
+@keyframes overlayIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.dialog-sheet {
+    background: var(--surface);
+    color: var(--text);
+    border-radius: var(--radius-xl);
+    padding: 24px;
+    width: min(420px, calc(100vw - 40px));
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+    animation: dialogIn 0.22s cubic-bezier(0.34, 1.3, 0.64, 1);
+}
+
+@keyframes dialogIn {
+    from { opacity: 0; transform: scale(0.92) translateY(10px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.dialog-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+    color: var(--text);
+}
+
+.dialog-message {
+    font-size: 0.95rem;
+    color: var(--text-soft);
+    line-height: 1.55;
+    margin-bottom: 18px;
+    white-space: pre-line;
+}
+
+.dialog-input {
+    width: 100%;
+    padding: 11px 14px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    font-size: 1rem;
+    background: var(--surface-2);
+    color: var(--text);
+    margin-bottom: 18px;
+}
+
+.dialog-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    background: var(--surface);
+    box-shadow: 0 0 0 3px rgba(124,58,237,0.15);
+}
+
+.dialog-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.btn {
+    padding: 11px 20px;
+    min-height: 44px;
+    border-radius: var(--radius-md);
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+}
+
+.btn:active { transform: scale(0.96); }
+
+.btn-secondary {
+    background: var(--surface-2);
+    color: var(--text-soft);
+    border: 1px solid var(--border);
+}
+
+.btn-secondary:hover { background: var(--surface-hover); }
+
+.btn-primary {
+    background: var(--primary-gradient);
+    color: white;
+    box-shadow: 0 3px 10px rgba(124,58,237,0.3);
+}
+
+.btn-primary:hover { box-shadow: 0 6px 16px rgba(124,58,237,0.4); }
+
+.btn-danger {
+    background: var(--danger);
+    color: white;
+    box-shadow: 0 3px 10px rgba(220,53,69,0.3);
+}
+
+.btn-danger:hover { filter: brightness(1.08); }
+
+/* ─── 토스트 ──────────────────────────────────────────────── */
+.toast {
+    position: fixed;
+    bottom: calc(30px + env(safe-area-inset-bottom));
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--success);
+    color: white;
+    padding: 12px 28px;
+    border-radius: 25px;
+    z-index: 2100;
+    font-size: 1rem;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    animation: toastIn 0.3s cubic-bezier(0.34, 1.3, 0.64, 1);
+    max-width: calc(100vw - 40px);
+    text-align: center;
+}
+
+@keyframes toastIn {
+    from { opacity: 0; transform: translateX(-50%) translateY(16px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* ─── GitHub Gist 설정 패널 ───────────────────────────────── */
 .settings-panel {
     background: rgba(0,0,0,0.25);
     backdrop-filter: blur(8px);
     border-top: 1px solid rgba(255,255,255,0.15);
     padding: 16px 20px;
     animation: fadeIn 0.2s ease;
+    text-align: left;
 }
 
 .settings-panel h4 {
@@ -528,6 +844,18 @@ body {
     font-weight: 700;
     margin-bottom: 10px;
     opacity: 0.9;
+}
+
+.settings-section {
+    margin-bottom: 14px;
+}
+
+.settings-section:last-child { margin-bottom: 0; }
+
+.settings-divider {
+    border: none;
+    border-top: 1px solid rgba(255,255,255,0.15);
+    margin: 14px 0;
 }
 
 .settings-row {
@@ -554,7 +882,6 @@ body {
 
 .sync-status {
     font-size: 0.8rem;
-    margin-top: 8px;
     padding: 4px 10px;
     border-radius: 20px;
     display: inline-flex;
@@ -592,6 +919,7 @@ body {
 
 .export-button {
     padding: 8px 16px;
+    min-height: 38px;
     background: rgba(255,255,255,0.18);
     color: white;
     border: 1.5px solid rgba(255,255,255,0.6);
@@ -610,11 +938,26 @@ body {
 
 .export-button:active {
     background: rgba(255,255,255,0.5);
+    transform: scale(0.96);
 }
 
-@media (max-width: 480px) {
+/* ─── 모바일 (하단 탭 바 + 세이프 에어리어) ───────────────── */
+@media (max-width: 768px) {
+    #root {
+        padding: 0;
+        max-width: none;
+    }
+
+    .app-container {
+        border-radius: 0;
+        min-height: 100vh;
+        min-height: 100dvh;
+        box-shadow: none;
+        padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom) + 12px);
+    }
+
     .app-header {
-        padding: 20px 15px;
+        padding: calc(20px + env(safe-area-inset-top)) 15px 18px;
     }
 
     .app-header h1 {
@@ -626,8 +969,48 @@ body {
         gap: 10px;
     }
 
+    .tab-navigation {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+        background: var(--surface);
+        border-top: 1px solid var(--border);
+        border-bottom: none;
+        padding: 6px 10px calc(6px + env(safe-area-inset-bottom));
+        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+        gap: 4px;
+    }
+
+    .tab-button {
+        flex-direction: column;
+        gap: 3px;
+        padding: 7px 4px 5px;
+        border-bottom: none;
+        border-radius: var(--radius-md);
+        font-size: 0.68rem;
+        min-height: var(--bottom-nav-height);
+        letter-spacing: 0;
+    }
+
+    .tab-button:hover {
+        background: transparent;
+    }
+
+    .tab-button.active {
+        background: var(--surface-hover);
+        color: var(--primary-text);
+        border-bottom: none;
+    }
+
+    .tab-icon {
+        font-size: 1.45rem;
+    }
+
     .tab-content {
         padding: 16px;
+        min-height: 60vh;
     }
 
     .visualization-container,
@@ -644,5 +1027,40 @@ body {
         padding: 8px 14px;
         min-height: 44px;
         font-size: 0.85rem;
+    }
+
+    /* 토스트는 하단 탭 바 위로 */
+    .toast {
+        bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom) + 20px);
+    }
+
+    /* 모바일에서 다이얼로그는 바텀시트로 */
+    .dialog-overlay {
+        align-items: flex-end;
+    }
+
+    .dialog-sheet {
+        width: 100%;
+        border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+        padding: 24px 20px calc(24px + env(safe-area-inset-bottom));
+        animation: sheetIn 0.25s cubic-bezier(0.34, 1.2, 0.64, 1);
+    }
+
+    @keyframes sheetIn {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
+    }
+
+    .dialog-actions .btn {
+        flex: 1;
+    }
+}
+
+/* ─── 모션 최소화 설정 존중 ───────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
     }
 }

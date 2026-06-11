@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { emotionColors } from '../constants.js';
 
-export default function RecordsList({ records, onDelete, onEdit, onGoToRecord }) {
+export default function RecordsList({ records, loading, onDelete, onEdit, onGoToRecord }) {
     const [filterEmotion, setFilterEmotion] = useState('all');
     const [filterLocation, setFilterLocation] = useState('all');
     const [filterBody, setFilterBody] = useState('all');
@@ -10,26 +10,28 @@ export default function RecordsList({ records, onDelete, onEdit, onGoToRecord })
     const [dateTo, setDateTo] = useState('');
     const [sortOrder, setSortOrder] = useState('newest');
 
+    // 첫 동기화 로딩 중이면 스켈레톤 표시
+    if (records.length === 0 && loading) {
+        return (
+            <div className="records-list" aria-busy="true" aria-label="기록 불러오는 중">
+                {[0, 1, 2].map(i => (
+                    <div key={i} className="skeleton-card">
+                        <div className="skeleton-line w40"></div>
+                        <div className="skeleton-line w90"></div>
+                        <div className="skeleton-line w70"></div>
+                    </div>
+                ))}
+            </div>
+        );
+    }
+
     if (records.length === 0) {
         return (
-            <div style={{ textAlign: 'center', color: '#6c757d', padding: '50px' }}>
-                <div style={{ fontSize: '3rem', marginBottom: '15px' }}>📝</div>
-                <div style={{ fontSize: '1.1rem', marginBottom: '20px' }}>아직 기록이 없습니다.</div>
-                <button
-                    onClick={onGoToRecord}
-                    style={{
-                        padding: '12px 28px',
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '25px',
-                        cursor: 'pointer',
-                        fontSize: '1rem',
-                        fontWeight: '600'
-                    }}
-                >
-                    지금 기록하기
-                </button>
+            <div className="empty-state">
+                <div className="empty-icon">📝</div>
+                <div className="empty-title">아직 기록이 없습니다</div>
+                <div className="empty-sub">오늘의 감정을 남기는 것부터 시작해보세요.</div>
+                <button className="empty-cta" onClick={onGoToRecord}>지금 기록하기</button>
             </div>
         );
     }
@@ -99,7 +101,7 @@ export default function RecordsList({ records, onDelete, onEdit, onGoToRecord })
         <div>
             {/* 필터 UI */}
             <div style={{
-                background: '#f8f9fa',
+                background: 'var(--surface-2)',
                 padding: '20px',
                 borderRadius: '15px',
                 marginBottom: '20px'
@@ -189,19 +191,19 @@ export default function RecordsList({ records, onDelete, onEdit, onGoToRecord })
                 </button>
 
                 <div style={{ marginTop: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ color: '#6c757d', fontSize: '0.9rem' }}>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
                         {filteredRecords.length}개 / {records.length}개 기록
                     </span>
                     <button
                         onClick={() => setSortOrder(sortOrder === 'newest' ? 'oldest' : 'newest')}
                         style={{
                             padding: '5px 12px',
-                            background: 'white',
-                            border: '1px solid #ced4da',
+                            background: 'var(--surface)',
+                            border: '1px solid var(--border)',
                             borderRadius: '8px',
                             cursor: 'pointer',
                             fontSize: '0.85rem',
-                            color: '#495057'
+                            color: 'var(--text-soft)'
                         }}
                     >
                         {sortOrder === 'newest' ? '최신순 ↓' : '오래된순 ↑'}
@@ -211,8 +213,10 @@ export default function RecordsList({ records, onDelete, onEdit, onGoToRecord })
 
             {/* 기록 목록 */}
             {sortedRecords.length === 0 ? (
-                <div style={{ textAlign: 'center', color: '#6c757d', padding: '50px' }}>
-                    필터 조건에 맞는 기록이 없습니다.
+                <div className="empty-state">
+                    <div className="empty-icon">🔍</div>
+                    <div className="empty-title">필터 조건에 맞는 기록이 없습니다</div>
+                    <div className="empty-sub">필터를 초기화하거나 검색어를 바꿔보세요.</div>
                 </div>
             ) : (
                 <div className="records-list">
@@ -236,27 +240,27 @@ export default function RecordsList({ records, onDelete, onEdit, onGoToRecord })
                                     <span
                                         key={i}
                                         className="emotion-tag"
-                                        style={{ background: emotionColors[emotion.name] || '#e9ecef' }}
+                                        style={{ background: emotionColors[emotion.name] || 'var(--surface-hover)' }}
                                     >
                                         {emotion.name} ({emotion.intensity})
                                     </span>
                                 ))}
                             </div>
-                            <div style={{ marginTop: '10px', color: '#6c757d' }}>
+                            <div style={{ marginTop: '10px', color: 'var(--text-muted)' }}>
                                 📍 {record.location.value}
                             </div>
                             {record.bodySensations.length > 0 && (
-                                <div style={{ marginTop: '10px', color: '#6c757d' }}>
+                                <div style={{ marginTop: '10px', color: 'var(--text-muted)' }}>
                                     🫀 {record.bodySensations.map(s => `${s.area}(${s.sensationType})`).join(', ')}
                                 </div>
                             )}
                             {record.memo && (
-                                <div style={{ marginTop: '10px', color: '#495057', background: '#f8f9fa', padding: '8px 12px', borderRadius: '8px', fontSize: '0.9rem' }}>
+                                <div style={{ marginTop: '10px', color: 'var(--text-soft)', background: 'var(--surface-2)', padding: '8px 12px', borderRadius: '8px', fontSize: '0.9rem' }}>
                                     📝 {record.memo}
                                 </div>
                             )}
                             {record.customCategories && Object.keys(record.customCategories).length > 0 && (
-                                <div style={{ marginTop: '10px', color: '#6c757d', fontSize: '0.9rem' }}>
+                                <div style={{ marginTop: '10px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
                                     {Object.entries(record.customCategories).map(([key, value]) => (
                                         <div key={key}>
                                             <strong>{key}</strong>: {value}

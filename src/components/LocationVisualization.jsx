@@ -113,7 +113,7 @@ export default function LocationVisualization({ records }) {
         // 제목
         svg.append('text')
             .attr('x', width / 2).attr('y', 25)
-            .attr('text-anchor', 'middle').attr('font-size', '15px').attr('font-weight', 'bold').attr('fill', '#333')
+            .attr('text-anchor', 'middle').attr('font-size', '15px').attr('font-weight', 'bold').style('fill', 'var(--text)')
             .text('장소별 감정 분포');
 
         // 범례 (데스크탑: 우측)
@@ -122,7 +122,7 @@ export default function LocationVisualization({ records }) {
             activeEmotions.forEach((name, i) => {
                 const color = emotionColors[name] || '#667eea';
                 legendG.append('rect').attr('x', 0).attr('y', i * 22 - 9).attr('width', 13).attr('height', 13).attr('fill', color).attr('rx', 3);
-                legendG.append('text').attr('x', 18).attr('y', i * 22).attr('font-size', '11px').attr('fill', '#444').text(name);
+                legendG.append('text').attr('x', 18).attr('y', i * 22).attr('font-size', '11px').style('fill', 'var(--text-soft)').text(name);
             });
         }
 

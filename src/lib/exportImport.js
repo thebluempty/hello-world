@@ -1,5 +1,6 @@
 
-export function importFromJSON(onImport) {
+// 파일 선택 → 파싱 결과를 콜백으로 전달 (확인/오류 UI는 호출 측에서 처리)
+export function importFromJSON(onParsed, onError) {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.json';
@@ -11,11 +12,9 @@ export function importFromJSON(onImport) {
             try {
                 const imported = JSON.parse(ev.target.result);
                 if (!Array.isArray(imported)) throw new Error('올바른 형식이 아닙니다');
-                if (confirm(`${imported.length}개의 기록을 가져옵니다. 기존 기록에 추가됩니다.`)) {
-                    onImport(imported);
-                }
+                onParsed(imported);
             } catch(e) {
-                alert('파일을 읽을 수 없습니다. 올바른 JSON 형식인지 확인하세요.');
+                onError('파일을 읽을 수 없습니다. 올바른 JSON 형식인지 확인하세요.');
             }
         };
         reader.readAsText(file);

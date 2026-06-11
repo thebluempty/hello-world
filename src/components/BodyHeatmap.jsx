@@ -61,7 +61,7 @@ export default function BodyHeatmap({ records }) {
         bodyG.append('rect')
             .attr('width', bodyWidth)
             .attr('height', bodyHeight)
-            .attr('fill', '#f8f9fa')
+            .style('fill', 'var(--surface-2)')
             .attr('stroke', '#dee2e6')
             .attr('stroke-width', 2)
             .attr('rx', 10);

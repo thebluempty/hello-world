@@ -193,7 +193,7 @@ export default function SineWaveVisualization({ records }) {
         // 제목
         svg.append('text')
             .attr('x', width / 2).attr('y', 22)
-            .attr('text-anchor', 'middle').attr('font-size', '15px').attr('font-weight', 'bold').attr('fill', '#333')
+            .attr('text-anchor', 'middle').attr('font-size', '15px').attr('font-weight', 'bold').style('fill', 'var(--text)')
             .text(`감정 강도 흐름 · ${timeScale === 'day' ? '하루' : timeScale === 'week' ? '이번 주' : timeScale === 'month' ? '이번 달' : '올해'}`);
 
         // 범례
@@ -204,7 +204,7 @@ export default function SineWaveVisualization({ records }) {
                 const color = emotionColors[name] || '#667eea';
                 const x = i * (isMobile ? 60 : 72);
                 legendG.append('circle').attr('cx', x + 5).attr('cy', 0).attr('r', 5).attr('fill', color);
-                legendG.append('text').attr('x', x + 13).attr('y', 4).attr('font-size', isMobile ? '9px' : '11px').attr('fill', '#555').text(name);
+                legendG.append('text').attr('x', x + 13).attr('y', 4).attr('font-size', isMobile ? '9px' : '11px').style('fill', 'var(--text-muted)').text(name);
             });
         }
 
